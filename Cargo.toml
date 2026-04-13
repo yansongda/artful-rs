@@ -1,8 +1,8 @@
 [package]
 name = "artful"
 version = "0.1.0"
-edition = "2021"
-rust-version = "1.75"
+edition = "2024"
+rust-version = "1.85"
 description = "Api RequesT Framework U Like - 你喜欢的 Rust API 请求框架"
 license = "MIT"
 repository = "https://github.com/yansongda/artful-rs"
