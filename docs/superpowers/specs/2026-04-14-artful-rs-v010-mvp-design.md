@@ -10,7 +10,7 @@
 |---------|------|---------|
 | `src/lib.rs` | 框架入口，导出公共 API | - |
 | `src/artful.rs` | 主入口 | `Artful` struct |
-| `src/rocket.rs` | 请求载体 + 配置 | `Rocket` struct, `RocketConfig`, `Method`, `HttpOptions` |
+| `src/rocket.rs` | 请求载体 + 配置 | `Rocket` struct, `RocketConfig`, `HttpOptions` |
 | `src/flow_ctrl.rs` | 流向控制器 | `FlowCtrl` struct, `Next` struct |
 | `src/plugin.rs` | 插件 trait 定义 | `Plugin` trait |
 | `src/config.rs` | 配置管理 | `Config`, `LoggerConfig` |
@@ -20,7 +20,7 @@
 
 **变更说明**：
 - 移除 `src/payload.rs` - payload 直接使用 `HashMap<String, Value>`
-- `src/rocket.rs` 增加 `RocketConfig`、`Method`、`HttpOptions` 类型
+- `src/rocket.rs` 增加 `RocketConfig`、`HttpOptions` 类型，复用 `reqwest::Method`
 - `src/config.rs` 移除 `HttpConfig` - HTTP 配置通过 `RocketConfig.http` 传递
 
 ### 1.2 辅助模块
@@ -120,32 +120,32 @@ pub type Result<T> = std::result::Result<T, ArtfulError>;
 ```rust
 use std::collections::HashMap;
 
-/// Rocket 配置（固定参数，类型安全）
+/// Rocket 配置（所有字段可在 plugin 中动态修改）
 #[derive(Debug, Clone)]
 pub struct RocketConfig {
-    /// HTTP 方法（默认 POST）
-    pub method: Method,
+    /// HTTP 方法（默认 POST，可动态修改）
+    pub method: reqwest::Method,
     
-    /// 请求 URL（必填）
+    /// 请求 URL（必填，可动态修改，如添加 query 参数）
     pub url: String,
     
-    /// 请求头
+    /// 请求头（可动态添加/修改）
     pub headers: HashMap<String, String>,
     
-    /// 请求体（可选，手动指定）
+    /// 请求体（可动态设置）
     pub body: Option<String>,
     
-    /// HTTP 选项
+    /// HTTP 选项（可动态修改，如调整 timeout）
     pub http: HttpOptions,
     
-    /// 是否返回 Rocket（调试用）
+    /// 是否返回 Rocket（调试用，可动态设置）
     pub return_rocket: bool,
 }
 
 impl Default for RocketConfig {
     fn default() -> Self {
         Self {
-            method: Method::POST,
+            method: reqwest::Method::POST,
             url: String::new(),
             headers: HashMap::new(),
             body: None,
@@ -156,43 +156,7 @@ impl Default for RocketConfig {
 }
 ```
 
-### 3.2 Method - HTTP 方法
-
-```rust
-/// HTTP 方法
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Method {
-    GET,
-    POST,
-    PUT,
-    DELETE,
-    PATCH,
-    HEAD,
-    OPTIONS,
-}
-
-impl Method {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Method::GET => "GET",
-            Method::POST => "POST",
-            Method::PUT => "PUT",
-            Method::DELETE => "DELETE",
-            Method::PATCH => "PATCH",
-            Method::HEAD => "HEAD",
-            Method::OPTIONS => "OPTIONS",
-        }
-    }
-}
-
-impl std::fmt::Display for Method {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.as_str())
-    }
-}
-```
-
-### 3.3 HttpOptions - HTTP 请求选项
+### 3.2 HttpOptions - HTTP 请求选项
 
 ```rust
 /// HTTP 请求选项
@@ -206,7 +170,7 @@ pub struct HttpOptions {
 }
 ```
 
-### 3.4 Rocket - 请求载体
+### 3.3 Rocket - 请求载体
 
 ```rust
 use std::collections::HashMap;
@@ -259,7 +223,7 @@ impl Rocket {
 }
 ```
 
-### 3.5 FlowCtrl - 流向控制器
+### 3.4 FlowCtrl - 流向控制器
 
 ```rust
 use std::sync::Arc;
@@ -323,7 +287,7 @@ impl FlowCtrl {
 }
 ```
 
-### 3.6 Next - 闭包穿透
+### 3.5 Next - 闭包穿透
 
 ```rust
 /// 下一个插件的闭包（洋葱穿透）
@@ -339,7 +303,7 @@ impl<'a> Next<'a> {
 }
 ```
 
-### 3.7 Plugin - 插件 trait
+### 3.6 Plugin - 插件 trait
 
 ```rust
 use async_trait::async_trait;
@@ -352,7 +316,7 @@ pub trait Plugin: Send + Sync + 'static {
 }
 ```
 
-### 3.8 Direction - 响应解析器
+### 3.7 Direction - 响应解析器
 
 ```rust
 use async_trait::async_trait;
@@ -400,7 +364,7 @@ impl Default for Destination {
 }
 ```
 
-### 3.9 Packer - 序列化器
+### 3.8 Packer - 序列化器
 
 ```rust
 use serde_json::Value;
@@ -415,7 +379,7 @@ pub trait Packer: Send + Sync {
 }
 ```
 
-### 3.10 Shortcut - 快捷方式
+### 3.9 Shortcut - 快捷方式
 
 ```rust
 use std::sync::Arc;
@@ -497,7 +461,7 @@ pub struct AddRadarPlugin;
 #[async_trait]
 impl Plugin for AddRadarPlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
-        let method = rocket.config.method.as_str();
+        let method = rocket.config.method;
         let url = &rocket.config.url;
         
         let client = get_client();
@@ -617,7 +581,7 @@ impl Plugin for LogPlugin {
         let start = Instant::now();
         
         tracing::info!(
-            method = rocket.config.method.as_str(),
+            method = %rocket.config.method,
             url = &rocket.config.url,
             "Request started"
         );
@@ -751,13 +715,13 @@ impl Default for LoggerConfig {
 ### 8.1 基础使用
 
 ```rust
-use artful::{Artful, RocketConfig, Method};
+use artful::{Artful, RocketConfig};
 use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
 use std::sync::Arc;
 use serde_json::json;
 
 let config = RocketConfig {
-    method: Method::POST,
+    method: reqwest::Method::POST,
     url: "https://api.example.com/orders".to_string(),
     headers: HashMap::from([
         ("Authorization".to_string(), "Bearer token".to_string()),
@@ -811,7 +775,7 @@ impl Shortcut for QueryOrderShortcut {
 
 let result = Artful::shortcut::<QueryOrderShortcut>(
     RocketConfig {
-        method: Method::GET,
+        method: reqwest::Method::GET,
         url: "https://api.example.com/orders/123".to_string(),
         ..Default::default()
     },
@@ -889,7 +853,7 @@ async fn test_full_pipeline() {
         .await;
     
     let config = RocketConfig {
-        method: Method::POST,
+        method: reqwest::Method::POST,
         url: mock_server.uri() + "/api/orders",
         ..Default::default()
     };
@@ -989,6 +953,8 @@ wiremock = "0.6"
 | HTTP Client 全局单例 | reqwest Client 连接池 per-instance，Clone 共享连接池 |
 | Config 与 Client 解耦 | Client 配置构建时固定，per-request timeout 通过 RocketConfig 设置 |
 | RocketConfig struct | 类型安全 + IDE 类型提示 |
+| RocketConfig 所有字段可修改 | plugin 动态修改配置（headers、body、url 等），靠约定管理 |
+| 复用 reqwest::Method | 减少重复定义，与 reqwest API 直接兼容 |
 | payload 直接用 HashMap | 简化设计，payload 本身足够灵活 |
 | 移除 state | payload 可承载插件间数据共享 |
 | 移除便捷方法 | 保持 API 简洁 |

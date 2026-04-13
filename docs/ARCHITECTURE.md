@@ -70,41 +70,29 @@ pub struct Rocket {
 
 ### 2.2 RocketConfig - 配置参数
 
-RocketConfig 将固定配置参数封装为 struct，提供类型安全和 IDE 类型提示。
+RocketConfig 将配置参数封装为 struct，提供类型安全和 IDE 类型提示。所有字段可在 plugin 中动态修改。
 
 ```rust
-/// Rocket 配置（固定参数，类型安全）
+/// Rocket 配置（所有字段可在 plugin 中动态修改）
 #[derive(Debug, Clone)]
 pub struct RocketConfig {
-    /// HTTP 方法（默认 POST）
-    pub method: Method,
+    /// HTTP 方法（默认 POST，可动态修改）
+    pub method: reqwest::Method,
     
-    /// 请求 URL（必填）
+    /// 请求 URL（必填，可动态修改，如添加 query 参数）
     pub url: String,
     
-    /// 请求头
+    /// 请求头（可动态添加/修改）
     pub headers: HashMap<String, String>,
     
-    /// 请求体（可选，手动指定）
+    /// 请求体（可动态设置）
     pub body: Option<String>,
     
-    /// HTTP 选项
+    /// HTTP 选项（可动态修改）
     pub http: HttpOptions,
     
-    /// 是否返回 Rocket（调试用）
+    /// 是否返回 Rocket（调试用，可动态设置）
     pub return_rocket: bool,
-}
-
-/// HTTP 方法
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Method {
-    GET,
-    POST,
-    PUT,
-    DELETE,
-    PATCH,
-    HEAD,
-    OPTIONS,
 }
 
 /// HTTP 请求选项
@@ -495,7 +483,7 @@ pub struct AddRadarPlugin;
 #[async_trait]
 impl Plugin for AddRadarPlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
-        let method = rocket.config.method.as_str();
+        let method = rocket.config.method;
         let url = &rocket.config.url;
         
         let client = get_client();
@@ -598,7 +586,7 @@ use serde_json::json;
 
 // 构建配置
 let config = RocketConfig {
-    method: Method::POST,
+    method: reqwest::Method::POST,
     url: "https://api.example.com/orders".to_string(),
     headers: HashMap::from([
         ("Authorization".to_string(), "Bearer token".to_string()),
@@ -657,7 +645,7 @@ impl Shortcut for QueryOrderShortcut {
 
 // 使用快捷方式调用
 let config = RocketConfig {
-    method: Method::GET,
+    method: reqwest::Method::GET,
     url: "https://api.example.com/orders/123".to_string(),
     ..Default::default()
 };
@@ -812,6 +800,8 @@ wiremock = "0.6"
 | HTTP Client 全局单例 | reqwest Client 连接池 per-instance，Clone 共享连接池，全局单例性能最优 |
 | Config 与 Client 解耦 | Client 配置构建时固定，per-request timeout 通过 RocketConfig.http 设置 |
 | RocketConfig struct | 类型安全 + IDE 类型提示，而非 `_` 参数分散在 HashMap |
+| RocketConfig 所有字段可修改 | plugin 动态修改配置（headers、body、url 等），靠约定管理 |
+| 复用 reqwest::Method | 减少重复定义，与 reqwest API 直接兼容 |
 | payload 直接用 HashMap | 简化设计，payload 本身足够灵活，无需额外 Payload struct |
 | 移除 state 字段 | payload 可承载插件间数据共享，无需额外的 state HashMap |
 | API 入口用 RocketConfig | Rust 最佳实践，而非完全模仿 PHP HashMap |
