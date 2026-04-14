@@ -23,11 +23,20 @@ artful = "~0.1"
 
 ## 快速开始
 
+### 初始化框架
+
+```rust
+use artful::{Artful, Config};
+
+// 初始化框架配置（可选）
+Artful::config(Config::default(), false);
+```
+
 ### 基础使用
 
 ```rust
 use artful::{Artful, RocketConfig, Plugin, Rocket, flow_ctrl::Next};
-use artful::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::collections::HashMap;
@@ -47,12 +56,14 @@ impl Plugin for MethodUrlPlugin {
 
 #[tokio::main]
 async fn main() -> artful::Result<()> {
-    let payload = HashMap::from([
+    // 原始参数（存储在 rocket.params，不可变）
+    let params = HashMap::from([
         ("order_id", json!("123")),
         ("amount", json!(100)),
     ]);
 
     let plugins: Vec<Arc<dyn artful::Plugin>> = vec![
+        Arc::new(StartPlugin),  // 将 params 初始化到 payload
         Arc::new(MethodUrlPlugin),
         Arc::new(AddPayloadBodyPlugin),
         Arc::new(AddRadarPlugin),
@@ -60,7 +71,7 @@ async fn main() -> artful::Result<()> {
     ];
 
     // RocketConfig 使用默认值，method/url 由插件设置
-    let result = Artful::artful(RocketConfig::default(), payload, plugins).await?;
+    let result = Artful::artful(RocketConfig::default(), params, plugins).await?;
     
     if let artful::Destination::Collection(json) = result {
         println!("Response: {}", json);
@@ -82,7 +93,7 @@ use std::collections::HashMap;
 struct MyApiShortcut;
 
 impl Shortcut for MyApiShortcut {
-    fn get_plugins(&self, _config: &RocketConfig, _payload: &HashMap<String, serde_json::Value>) 
+    fn get_plugins(&self, _config: &RocketConfig, _params: &HashMap<String, serde_json::Value>) 
         -> Vec<Arc<dyn Plugin>> 
     {
         vec![
@@ -99,7 +110,7 @@ let result = Artful::shortcut::<MyApiShortcut>(
         url: "https://api.example.com".to_string(),
         ..Default::default()
     },
-    HashMap::new(),
+    HashMap::new(),  // params
 ).await?;
 ```
 
@@ -140,14 +151,19 @@ impl Plugin for SignaturePlugin {
 
 ```rust
 pub struct Rocket {
-    pub config: RocketConfig,      // 配置（method、url、headers 等）
-    pub payload: HashMap<String, Value>, // 业务参数
-    pub radar: Option<Request>,    // HTTP 请求对象
+    params: HashMap<String, Value>,   // 原始参数（不变）
+    pub payload: HashMap<String, Value>, // 业务参数（可修改）
+    pub config: RocketConfig,         // HTTP 配置（可修改）
+    pub radar: Option<Request>,       // HTTP 请求对象
     pub destination: Option<Destination>, // 解析结果
-    pub direction: DirectionKind,  // 响应解析策略
-    pub packer: Arc<dyn Packer>,   // 序列化器
+    pub direction: DirectionKind,     // 响应解析策略
+    pub packer: Arc<dyn Packer>,      // 序列化器
 }
 ```
+
+**设计说明**：
+- `params`: 原始参数，由调用方传入，整个生命周期中保持不变
+- `payload`: 业务参数，由 `StartPlugin` 从 `params` 初始化，后续插件可修改
 
 ### Plugin - 插件（洋葱模型）
 
@@ -182,7 +198,7 @@ pub enum DirectionKind {
 
 | 插件 | 功能 |
 |------|------|
-| `StartPlugin` | 初始化（占位） |
+| `StartPlugin` | 将 params 初始化到 payload |
 | `AddPayloadBodyPlugin` | 将 payload 序列化为请求体 |
 | `AddRadarPlugin` | 构建 HTTP Request |
 | `ParserPlugin` | 执行请求并解析响应 |

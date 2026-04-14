@@ -1,13 +1,10 @@
 //! 初始化插件
 //!
-//! 请求链的起点插件，当前版本仅作为占位。
+//! 请求链的起点插件，负责将原始参数初始化到 payload。
 //!
-//! # 后续迭代
+//! # 行为
 //!
-//! 未来版本可在此添加初始化逻辑，如：
-//! - 参数验证
-//! - 默认值设置
-//! - 上下文初始化
+//! 将 rocket.params 复制到 rocket.payload，使 payload 成为可修改的工作参数。
 
 use async_trait::async_trait;
 
@@ -21,6 +18,9 @@ pub struct StartPlugin;
 #[async_trait]
 impl Plugin for StartPlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+        // 将原始参数合并到 payload
+        rocket.merge_payload(rocket.get_params().clone());
+
         next.call(rocket).await;
     }
 }
