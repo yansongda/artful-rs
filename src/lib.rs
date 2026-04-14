@@ -34,6 +34,6 @@ pub use http::get_client;
 pub use packer::Packer;
 pub use packers::JsonPacker;
 pub use plugin::Plugin;
-pub use plugins::{AddPayloadBodyPlugin, AddRadarPlugin, LogPlugin, ParserPlugin, StartPlugin};
+pub use plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
 pub use rocket::{HttpOptions, Rocket, RocketConfig};
 pub use shortcut::Shortcut;
