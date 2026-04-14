@@ -19,7 +19,7 @@ impl Shortcut for TestShortcut {
 
 #[tokio::test]
 async fn test_shortcut_basic() {
-    let shortcut = TestShortcut::default();
+    let shortcut = TestShortcut;
     let plugins = shortcut.get_plugins(&HashMap::new());
 
     assert_eq!(plugins.len(), 4);
