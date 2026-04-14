@@ -30,6 +30,7 @@ pub struct RocketConfig {
     pub body: Option<String>,
     pub http: HttpOptions,
     pub return_rocket: bool,
+    pub direction: DirectionKind,
 }
 
 impl Default for RocketConfig {
@@ -41,6 +42,7 @@ impl Default for RocketConfig {
             body: None,
             http: HttpOptions::default(),
             return_rocket: false,
+            direction: DirectionKind::JsonDirection,
         }
     }
 }
@@ -70,9 +72,6 @@ pub struct Rocket {
     /// 最终解析结果
     pub destination: Option<crate::direction::Destination>,
 
-    /// 响应解析策略
-    pub direction: DirectionKind,
-
     /// 序列化器
     pub packer: Arc<dyn Packer>,
 }
@@ -83,7 +82,6 @@ impl std::fmt::Debug for Rocket {
             .field("params", &self.params)
             .field("payload", &self.payload)
             .field("config", &self.config)
-            .field("direction", &self.direction)
             .finish()
     }
 }
@@ -101,7 +99,6 @@ impl Rocket {
             radar: None,
             destination_origin: None,
             destination: None,
-            direction: DirectionKind::JsonDirection,
             packer: Arc::new(JsonPacker),
         }
     }

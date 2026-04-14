@@ -155,7 +155,6 @@ pub struct Rocket {
     pub config: RocketConfig,         // HTTP 配置（可修改）
     pub radar: Option<Request>,       // HTTP 请求对象
     pub destination: Option<Destination>, // 解析结果
-    pub direction: DirectionKind,     // 响应解析策略
     pub packer: Arc<dyn Packer>,      // 序列化器
 }
 ```
@@ -163,7 +162,21 @@ pub struct Rocket {
 **设计说明**：
 - `params`: 原始参数，由调用方传入，整个生命周期中保持不变
 - `payload`: 业务参数，由 `StartPlugin` 从 `params` 初始化，后续插件可修改
-- `config`: HTTP 配置，由插件负责设置（method、url 等）
+- `config`: HTTP 配置，包含 `direction`（响应解析策略），由插件负责设置
+
+### RocketConfig - 请求配置
+
+```rust
+pub struct RocketConfig {
+    pub method: reqwest::Method,
+    pub url: String,
+    pub headers: HashMap<String, String>,
+    pub body: Option<String>,
+    pub http: HttpOptions,
+    pub return_rocket: bool,
+    pub direction: DirectionKind,     // 响应解析策略
+}
+```
 
 ### Plugin - 插件（洋葱模型）
 
