@@ -61,7 +61,7 @@ async fn main() -> artisan::Result<()> {
             url: "https://httpbin.org/get".to_string(),
         }),
         Arc::new(SetDirectionPlugin {
-            direction: DirectionKind::ResponseDirection,
+            direction: DirectionKind::Response,
         }),
         Arc::new(AddRadarPlugin),
         Arc::new(ParserPlugin),

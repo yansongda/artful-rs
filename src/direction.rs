@@ -10,9 +10,9 @@
 //!
 //! # 解析策略
 //!
-//! - `JsonDirection` - 解析为 JSON（默认）
-//! - `ResponseDirection` - 返回原始 Response
-//! - `NoHttpRequestDirection` - 不发起 HTTP 请求
+//! - `Json` - 解析为 JSON（默认）
+//! - `Response` - 返回原始 Response
+//! - `NoRequest` - 不发起 HTTP 请求
 //! - `Custom` - 自定义解析器
 
 use std::sync::Arc;
@@ -26,9 +26,9 @@ pub trait Direction: Send + Sync + std::fmt::Debug {
 /// 解析策略枚举
 #[derive(Debug, Clone)]
 pub enum DirectionKind {
-    JsonDirection,
-    ResponseDirection,
-    NoHttpRequestDirection,
+    Json,
+    Response,
+    NoRequest,
     Custom(Arc<dyn Direction>),
 }
 

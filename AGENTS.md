@@ -145,7 +145,7 @@ pub trait Shortcut: Default {  // Default bound required
    next.call(rocket).await?;  // Required - not just .await
    ```
 
-3. **DirectionKind enum**: `NoHttpRequestDirection` (not shortened)
+3. **DirectionKind enum**: `Json`, `Response`, `NoRequest`, `Custom`
 
 4. **Rocket params vs payload**: `params` immutable, `payload` mutable by plugins
 

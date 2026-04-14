@@ -6,8 +6,8 @@ use std::sync::Arc;
 
 #[test]
 fn test_direction_kind_default() {
-    let kind = DirectionKind::JsonDirection;
-    assert!(matches!(kind, DirectionKind::JsonDirection));
+    let kind = DirectionKind::Json;
+    assert!(matches!(kind, DirectionKind::Json));
 }
 
 #[test]
