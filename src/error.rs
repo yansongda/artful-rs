@@ -1,3 +1,12 @@
+//! 错误类型定义
+//!
+//! 定义框架中所有可能出现的错误类型，包括：
+//! - HTTP 请求错误（RequestFailed, Timeout, NetworkError）
+//! - 序列化错误（JsonSerializeError, JsonDeserializeError）
+//! - 插件错误（PluginExecutionError）
+//! - 参数错误（MissingParameter, InvalidParameter）
+//! - 响应解析错误（DirectionParseError）
+
 use thiserror::Error;
 
 #[derive(Debug, Error)]

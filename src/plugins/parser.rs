@@ -1,10 +1,21 @@
+//! 解析响应插件
+//!
+//! 执行 HTTP 请求并解析响应。
+//!
+//! # 行为
+//!
+//! - 检查 rocket.direction，决定是否发起请求
+//! - 执行 HTTP 请求，存入 rocket.destination_origin
+//! - 根据 DirectionKind 解析响应
+//! - 结果存入 rocket.destination
+
 use async_trait::async_trait;
 
+use crate::Rocket;
 use crate::direction::{CollectionDirection, Destination, Direction, DirectionKind};
 use crate::flow_ctrl::Next;
 use crate::http::get_client;
 use crate::plugin::Plugin;
-use crate::Rocket;
 
 /// 解析响应插件
 pub struct ParserPlugin;

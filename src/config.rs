@@ -1,3 +1,11 @@
+//! 框架配置模块
+//!
+//! 定义框架级别的配置，包括：
+//! - [`Config`] - 框架主配置
+//! - [`LoggerConfig`] - 日志配置
+//!
+//! 注意：HTTP 相关配置通过 [`RocketConfig`] 设置，而非此模块。
+
 use crate::direction::DirectionKind;
 
 #[derive(Debug, Clone)]

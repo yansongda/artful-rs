@@ -1,10 +1,22 @@
+//! 构建 HTTP Request 插件
+//!
+//! 根据 RocketConfig 构建 HTTP Request 对象。
+//!
+//! # 行为
+//!
+//! - 使用 config.method 和 config.url
+//! - 添加 config.headers
+//! - 设置请求体（config.body 或 payload）
+//! - 应用 config.http.timeout
+//! - 结果存入 rocket.radar
+
 use async_trait::async_trait;
 use std::time::Duration;
 
+use crate::Rocket;
 use crate::flow_ctrl::Next;
 use crate::http::get_client;
 use crate::plugin::Plugin;
-use crate::Rocket;
 
 /// 构建 HTTP Request 插件
 pub struct AddRadarPlugin;

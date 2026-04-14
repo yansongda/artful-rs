@@ -1,7 +1,20 @@
+//! 流向控制器模块
+//!
+//! 管理洋葱模型的插件执行流程。
+//!
+//! # 核心类型
+//!
+//! - [`FlowCtrl`] - 流向控制器，管理插件执行顺序
+//! - [`Next`] - 闭包穿透，调用下一个插件
+//!
+//! # 执行流程
+//!
+//! 插件按顺序执行：前向阶段层层穿透，后向阶段层层返回。
+
 use std::sync::Arc;
 
-use crate::plugin::Plugin;
 use crate::Rocket;
+use crate::plugin::Plugin;
 
 /// 洋葱模型流向控制器
 pub struct FlowCtrl {

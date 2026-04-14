@@ -1,8 +1,12 @@
+//! JSON 序列化器实现
+//!
+//! 实现 [`Packer`] trait，提供 JSON 序列化/反序列化功能。
+
 use serde_json::Value;
 use std::collections::HashMap;
 
-use crate::packer::Packer;
 use crate::Result;
+use crate::packer::Packer;
 
 #[derive(Debug)]
 pub struct JsonPacker;

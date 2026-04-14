@@ -1,3 +1,18 @@
+//! 请求载体模块
+//!
+//! 定义请求生命周期中的数据载体和配置类型。
+//!
+//! # 核心类型
+//!
+//! - [`Rocket`] - 请求载体，携带所有请求/响应数据
+//! - [`RocketConfig`] - HTTP 请求配置（method, url, headers 等）
+//! - [`HttpOptions`] - HTTP 选项（timeout, connect_timeout）
+//!
+//! # 设计说明
+//!
+//! RocketConfig 所有字段可在 plugin 中动态修改，
+//! 实现灵活的请求配置。
+
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;

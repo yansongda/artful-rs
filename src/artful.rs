@@ -1,15 +1,25 @@
+//! Artful 主入口模块
+//!
+//! 框架的核心入口，提供三种请求方式：
+//!
+//! # 方法
+//!
+//! - [`Artful::artful`] - 执行完整插件链
+//! - [`Artful::shortcut`] - 使用 Shortcut 快捷方式
+//! - [`Artful::raw`] - 直接 HTTP 请求（跳过插件）
+
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use serde_json::Value;
 
+use crate::Result;
 use crate::direction::Destination;
 use crate::flow_ctrl::FlowCtrl;
 use crate::http::get_client;
 use crate::plugin::Plugin;
-use crate::shortcut::Shortcut;
 use crate::rocket::{Rocket, RocketConfig};
-use crate::Result;
+use crate::shortcut::Shortcut;
 
 /// Artful 主类 - 框架入口
 pub struct Artful;
