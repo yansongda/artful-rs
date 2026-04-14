@@ -121,4 +121,35 @@ impl Rocket {
     pub fn merge_payload(&mut self, params: HashMap<String, Value>) {
         self.payload.extend(params);
     }
+
+    /// 设置 HTTP 方法
+    pub fn set_method(&mut self, method: reqwest::Method) {
+        self.config.method = method;
+    }
+
+    /// 设置请求 URL
+    pub fn set_url(&mut self, url: impl Into<String>) {
+        self.config.url = url.into();
+    }
+
+    /// 添加请求头
+    pub fn add_header(&mut self, key: impl Into<String>, value: impl Into<String>) {
+        self.config.headers.insert(key.into(), value.into());
+    }
+
+    /// 设置请求体
+    pub fn set_body(&mut self, body: impl Into<String>) {
+        self.config.body = Some(body.into());
+    }
+
+    /// 设置超时时间（秒）
+    pub fn set_timeout(&mut self, timeout: u64) {
+        self.config.http.timeout = Some(timeout);
+    }
+}
+
+impl From<HashMap<String, Value>> for Rocket {
+    fn from(params: HashMap<String, Value>) -> Self {
+        Self::new(params)
+    }
 }

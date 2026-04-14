@@ -22,6 +22,7 @@ impl Direction for JsonDirection {
                     .map(Destination::Json)
                     .map_err(|e| ArtfulError::JsonDeserializeError {
                         message: e.to_string(),
+                        source: Some(e),
                     })
             }
             None => Err(ArtfulError::MissingResponse),
