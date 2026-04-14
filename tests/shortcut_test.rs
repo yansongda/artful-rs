@@ -1,5 +1,5 @@
 use artful::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
-use artful::{Plugin, RocketConfig, Shortcut};
+use artful::{Plugin, Shortcut};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -7,11 +7,7 @@ use std::sync::Arc;
 struct TestShortcut;
 
 impl Shortcut for TestShortcut {
-    fn get_plugins(
-        &self,
-        _config: &RocketConfig,
-        _payload: &HashMap<String, serde_json::Value>,
-    ) -> Vec<Arc<dyn Plugin>> {
+    fn get_plugins(&self, _params: &HashMap<String, serde_json::Value>) -> Vec<Arc<dyn Plugin>> {
         vec![
             Arc::new(StartPlugin),
             Arc::new(AddPayloadBodyPlugin),
@@ -24,8 +20,7 @@ impl Shortcut for TestShortcut {
 #[tokio::test]
 async fn test_shortcut_basic() {
     let shortcut = TestShortcut::default();
-    let config = RocketConfig::default();
-    let plugins = shortcut.get_plugins(&config, &HashMap::new());
+    let plugins = shortcut.get_plugins(&HashMap::new());
 
     assert_eq!(plugins.len(), 4);
 }

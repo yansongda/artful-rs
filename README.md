@@ -29,51 +29,55 @@ artful = "~0.1"
 use artful::{Artful, Config};
 
 // 初始化框架配置（可选）
-Artful::config(Config::default(), false);
+// config._force = true 时强制覆盖已存在的配置
+Artful::config(Config::default());
 ```
 
 ### 基础使用
 
 ```rust
-use artful::{Artful, RocketConfig, Plugin, Rocket, flow_ctrl::Next};
+use artful::{Artful, Plugin, Rocket, flow_ctrl::Next};
 use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::collections::HashMap;
 use serde_json::json;
 
-/// 设置 HTTP 方法和 URL 的插件
-struct MethodUrlPlugin;
+struct MethodUrlPlugin {
+    method: reqwest::Method,
+    url: String,
+}
 
 #[async_trait]
 impl Plugin for MethodUrlPlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
-        rocket.config.method = reqwest::Method::POST;
-        rocket.config.url = "https://api.example.com/orders".to_string();
+        rocket.config.method = self.method.clone();
+        rocket.config.url = self.url.clone();
         next.call(rocket).await;
     }
 }
 
 #[tokio::main]
 async fn main() -> artful::Result<()> {
-    // 原始参数（存储在 rocket.params，不可变）
     let params = HashMap::from([
         ("order_id", json!("123")),
         ("amount", json!(100)),
     ]);
 
     let plugins: Vec<Arc<dyn artful::Plugin>> = vec![
-        Arc::new(StartPlugin),  // 将 params 初始化到 payload
-        Arc::new(MethodUrlPlugin),
+        Arc::new(StartPlugin),
+        Arc::new(MethodUrlPlugin {
+            method: reqwest::Method::POST,
+            url: "https://api.example.com/orders".to_string(),
+        }),
         Arc::new(AddPayloadBodyPlugin),
         Arc::new(AddRadarPlugin),
         Arc::new(ParserPlugin),
     ];
 
-    // RocketConfig 使用默认值，method/url 由插件设置
-    let result = Artful::artful(RocketConfig::default(), params, plugins).await?;
+    let result = Artful::artful(params, plugins).await?;
     
-    if let artful::Destination::Collection(json) = result {
+    if let artful::Destination::Json(json) = result {
         println!("Response: {}", json);
     }
 
@@ -84,20 +88,27 @@ async fn main() -> artful::Result<()> {
 ### 使用 Shortcut 快捷方式
 
 ```rust
-use artful::{Artful, Shortcut, RocketConfig, Plugin};
+use artful::{Artful, Shortcut, Plugin};
 use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
 use std::sync::Arc;
 use std::collections::HashMap;
 
 #[derive(Default)]
-struct MyApiShortcut;
+struct MyApiShortcut {
+    method: reqwest::Method,
+    url: String,
+}
 
 impl Shortcut for MyApiShortcut {
-    fn get_plugins(&self, _config: &RocketConfig, _params: &HashMap<String, serde_json::Value>) 
+    fn get_plugins(&self, _params: &HashMap<String, serde_json::Value>) 
         -> Vec<Arc<dyn Plugin>> 
     {
         vec![
             Arc::new(StartPlugin),
+            Arc::new(MethodUrlPlugin {
+                method: self.method.clone(),
+                url: self.url.clone(),
+            }),
             Arc::new(AddPayloadBodyPlugin),
             Arc::new(AddRadarPlugin),
             Arc::new(ParserPlugin),
@@ -105,13 +116,7 @@ impl Shortcut for MyApiShortcut {
     }
 }
 
-let result = Artful::shortcut::<MyApiShortcut>(
-    RocketConfig {
-        url: "https://api.example.com".to_string(),
-        ..Default::default()
-    },
-    HashMap::new(),  // params
-).await?;
+let result = Artful::shortcut::<MyApiShortcut>(HashMap::new()).await?;
 ```
 
 ### 自定义插件
@@ -120,7 +125,6 @@ let result = Artful::shortcut::<MyApiShortcut>(
 use artful::{Plugin, Rocket, flow_ctrl::Next};
 use async_trait::async_trait;
 
-/// 签名插件
 pub struct SignaturePlugin {
     api_key: String,
 }
@@ -128,17 +132,12 @@ pub struct SignaturePlugin {
 #[async_trait]
 impl Plugin for SignaturePlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
-        // 前向：添加签名头
         rocket.config.headers.insert(
             "X-Signature".to_string(),
             sign(&self.api_key, &rocket.payload),
         );
         
-        // 调用下一层
         next.call(rocket).await;
-        
-        // 后向：可选的响应验证
-        // ...
     }
 }
 ```
@@ -164,6 +163,7 @@ pub struct Rocket {
 **设计说明**：
 - `params`: 原始参数，由调用方传入，整个生命周期中保持不变
 - `payload`: 业务参数，由 `StartPlugin` 从 `params` 初始化，后续插件可修改
+- `config`: HTTP 配置，由插件负责设置（method、url 等）
 
 ### Plugin - 插件（洋葱模型）
 
@@ -186,10 +186,10 @@ pub trait Plugin: Send + Sync + 'static {
 
 ```rust
 pub enum DirectionKind {
-    CollectionDirection,     // 解析为 JSON（默认）
-    ResponseDirection,       // 返回原始 Response
-    NoHttpRequestDirection,  // 不发起 HTTP 请求
-    OriginResponseDirection, // 返回 Rocket（调试用）
+    JsonDirection,             // 解析为 JSON（默认）
+    ResponseDirection,         // 返回原始 Response
+    NoHttpRequestDirection,    // 不发起 HTTP 请求
+    OriginResponseDirection,   // 返回 Rocket（调试用）
     Custom(Arc<dyn Direction>), // 自定义解析器
 }
 ```

@@ -1,11 +1,26 @@
 use artful::direction::Destination;
 use artful::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
-use artful::{Artful, Plugin, RocketConfig};
+use artful::{Artful, Plugin, Rocket, flow_ctrl::Next};
+use async_trait::async_trait;
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
+
+struct MethodUrlPlugin {
+    method: reqwest::Method,
+    url: String,
+}
+
+#[async_trait]
+impl Plugin for MethodUrlPlugin {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+        rocket.config.method = self.method.clone();
+        rocket.config.url = self.url.clone();
+        next.call(rocket).await;
+    }
+}
 
 #[tokio::test]
 async fn test_full_pipeline() {
@@ -19,24 +34,20 @@ async fn test_full_pipeline() {
         .mount(&mock_server)
         .await;
 
-    let config = RocketConfig {
-        method: reqwest::Method::POST,
-        url: mock_server.uri() + "/api/orders",
-        ..Default::default()
-    };
-
     let plugins: Vec<Arc<dyn Plugin>> = vec![
         Arc::new(StartPlugin),
+        Arc::new(MethodUrlPlugin {
+            method: reqwest::Method::POST,
+            url: mock_server.uri() + "/api/orders",
+        }),
         Arc::new(AddPayloadBodyPlugin),
         Arc::new(AddRadarPlugin),
         Arc::new(ParserPlugin),
     ];
 
-    let result = Artful::artful(config, HashMap::new(), plugins)
-        .await
-        .unwrap();
+    let result = Artful::artful(HashMap::new(), plugins).await.unwrap();
 
-    assert!(matches!(result, Destination::Collection(_)));
+    assert!(matches!(result, Destination::Json(_)));
 }
 
 #[tokio::test]
@@ -49,25 +60,23 @@ async fn test_pipeline_with_payload() {
         .mount(&mock_server)
         .await;
 
-    let config = RocketConfig {
-        method: reqwest::Method::POST,
-        url: mock_server.uri() + "/api/test",
-        ..Default::default()
-    };
-
-    let payload = HashMap::from([
+    let params = HashMap::from([
         ("order_id".to_string(), json!("123")),
         ("amount".to_string(), json!(100)),
     ]);
 
     let plugins: Vec<Arc<dyn Plugin>> = vec![
         Arc::new(StartPlugin),
+        Arc::new(MethodUrlPlugin {
+            method: reqwest::Method::POST,
+            url: mock_server.uri() + "/api/test",
+        }),
         Arc::new(AddPayloadBodyPlugin),
         Arc::new(AddRadarPlugin),
         Arc::new(ParserPlugin),
     ];
 
-    let result = Artful::artful(config, payload, plugins).await.unwrap();
+    let result = Artful::artful(params, plugins).await.unwrap();
 
-    assert!(matches!(result, Destination::Collection(_)));
+    assert!(matches!(result, Destination::Json(_)));
 }

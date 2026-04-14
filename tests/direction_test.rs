@@ -2,8 +2,8 @@ use artful::direction::{Destination, DirectionKind};
 
 #[test]
 fn test_direction_kind_default() {
-    let kind = DirectionKind::CollectionDirection;
-    assert!(matches!(kind, DirectionKind::CollectionDirection));
+    let kind = DirectionKind::JsonDirection;
+    assert!(matches!(kind, DirectionKind::JsonDirection));
 }
 
 #[test]

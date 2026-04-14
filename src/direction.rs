@@ -10,7 +10,7 @@
 //!
 //! # 解析策略
 //!
-//! - `CollectionDirection` - 解析为 JSON（默认）
+//! - `JsonDirection` - 解析为 JSON（默认）
 //! - `ResponseDirection` - 返回原始 Response
 //! - `NoHttpRequestDirection` - 不发起 HTTP 请求
 //! - `OriginResponseDirection` - 返回 Rocket（调试用）
@@ -23,20 +23,21 @@ pub trait Direction: Send + Sync + std::fmt::Debug {
     async fn parse(&self, rocket: &mut crate::Rocket) -> crate::Result<Destination>;
 }
 
+/// JSON 解析方向
 #[derive(Debug, Clone)]
-pub struct CollectionDirection;
+pub struct JsonDirection;
 
 #[async_trait::async_trait]
-impl Direction for CollectionDirection {
+impl Direction for JsonDirection {
     async fn parse(&self, rocket: &mut crate::Rocket) -> crate::Result<Destination> {
         let value = serde_json::to_value(&rocket.payload)?;
-        Ok(Destination::Collection(value))
+        Ok(Destination::Json(value))
     }
 }
 
 #[derive(Debug, Clone)]
 pub enum DirectionKind {
-    CollectionDirection,
+    JsonDirection,
     ResponseDirection,
     NoHttpRequestDirection,
     OriginResponseDirection,
@@ -45,7 +46,7 @@ pub enum DirectionKind {
 
 #[derive(Default)]
 pub enum Destination {
-    Collection(serde_json::Value),
+    Json(serde_json::Value),
     Response(reqwest::Response),
     Rocket(Box<crate::Rocket>),
     #[default]
@@ -55,7 +56,7 @@ pub enum Destination {
 impl std::fmt::Debug for Destination {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Destination::Collection(v) => f.debug_tuple("Collection").field(v).finish(),
+            Destination::Json(v) => f.debug_tuple("Json").field(v).finish(),
             Destination::Response(_) => f
                 .debug_tuple("Response")
                 .field(&"<reqwest::Response>")

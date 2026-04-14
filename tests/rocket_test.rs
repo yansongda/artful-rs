@@ -14,19 +14,14 @@ fn test_rocket_config_default() {
 
 #[test]
 fn test_rocket_new() {
-    let config = RocketConfig {
-        method: reqwest::Method::GET,
-        url: "https://example.com".to_string(),
-        ..Default::default()
-    };
+    let mut params = HashMap::new();
+    params.insert("key".to_string(), json!("value"));
 
-    let mut payload = HashMap::new();
-    payload.insert("key".to_string(), json!("value"));
+    let rocket = Rocket::new(params);
 
-    let rocket = Rocket::new(config, payload);
-
-    assert_eq!(rocket.config.method, reqwest::Method::GET);
-    assert_eq!(rocket.config.url, "https://example.com");
+    // config 使用默认值
+    assert_eq!(rocket.config.method, reqwest::Method::POST);
+    assert_eq!(rocket.config.url, "");
     assert!(rocket.radar.is_none());
     assert!(rocket.destination_origin.is_none());
     assert!(rocket.destination.is_none());

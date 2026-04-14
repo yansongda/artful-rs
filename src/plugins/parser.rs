@@ -12,7 +12,7 @@
 use async_trait::async_trait;
 
 use crate::Rocket;
-use crate::direction::{CollectionDirection, Destination, Direction, DirectionKind};
+use crate::direction::{Destination, Direction, DirectionKind, JsonDirection};
 use crate::flow_ctrl::Next;
 use crate::http::get_client;
 use crate::plugin::Plugin;
@@ -42,8 +42,8 @@ impl Plugin for ParserPlugin {
             let direction_kind = rocket.direction.clone();
 
             match direction_kind {
-                DirectionKind::CollectionDirection => {
-                    let direction = CollectionDirection;
+                DirectionKind::JsonDirection => {
+                    let direction = JsonDirection;
                     if let Ok(dest) = direction.parse(rocket).await {
                         rocket.destination = Some(dest);
                     }
