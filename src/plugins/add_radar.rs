@@ -24,8 +24,8 @@ pub struct AddRadarPlugin;
 #[async_trait]
 impl Plugin for AddRadarPlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> crate::Result<()> {
-        let mut request_builder = get_client()
-            .request(rocket.config.method.clone(), &rocket.config.url);
+        let mut request_builder =
+            get_client().request(rocket.config.method.clone(), &rocket.config.url);
 
         for (key, value) in &rocket.config.headers {
             request_builder = request_builder.header(key, value);
@@ -42,7 +42,8 @@ impl Plugin for AddRadarPlugin {
             request_builder = request_builder.timeout(Duration::from_secs(timeout));
         }
 
-        let request = request_builder.build()
+        let request = request_builder
+            .build()
             .map_err(|e| crate::error::ArtfulError::InvalidUrl(e.to_string()))?;
         rocket.radar = Some(request);
 

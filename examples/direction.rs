@@ -1,10 +1,10 @@
 //! Direction 响应解析策略示例
 
+use artful::plugins::{AddRadarPlugin, ParserPlugin, StartPlugin};
 use artful::{Artful, Plugin, Rocket, direction::DirectionKind, flow_ctrl::Next};
-use artful::plugins::{StartPlugin, AddRadarPlugin, ParserPlugin};
 use async_trait::async_trait;
-use std::sync::Arc;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 /// 设置 HTTP 方法和 URL 的插件
 struct MethodUrlPlugin {
@@ -48,7 +48,7 @@ async fn main() -> artful::Result<()> {
     ];
 
     let result = Artful::artful(HashMap::new(), plugins).await?;
-    
+
     if let artful::Destination::Json(json) = result {
         println!("JSON Response: {}", json);
     }
@@ -68,7 +68,7 @@ async fn main() -> artful::Result<()> {
     ];
 
     let result = Artful::artful(HashMap::new(), plugins).await?;
-    
+
     if let artful::Destination::Response(response) = result {
         println!("Response status: {}", response.status());
         println!("Response headers: {:?}", response.headers());

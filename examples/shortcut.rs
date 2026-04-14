@@ -1,11 +1,11 @@
 //! Shortcut 快捷方式示例
 
-use artful::{Artful, Shortcut, Plugin, Rocket, flow_ctrl::Next};
-use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use artful::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
+use artful::{Artful, Plugin, Rocket, Shortcut, flow_ctrl::Next};
 use async_trait::async_trait;
-use std::sync::Arc;
-use std::collections::HashMap;
 use serde_json::json;
+use std::collections::HashMap;
+use std::sync::Arc;
 
 /// 设置 HTTP 方法和 URL 的插件
 struct MethodUrlPlugin {
@@ -27,9 +27,7 @@ impl Plugin for MethodUrlPlugin {
 struct HttpbinPostShortcut;
 
 impl Shortcut for HttpbinPostShortcut {
-    fn get_plugins(&self, _params: &HashMap<String, serde_json::Value>) 
-        -> Vec<Arc<dyn Plugin>> 
-    {
+    fn get_plugins(&self, _params: &HashMap<String, serde_json::Value>) -> Vec<Arc<dyn Plugin>> {
         vec![
             Arc::new(StartPlugin),
             Arc::new(MethodUrlPlugin {
@@ -48,9 +46,7 @@ impl Shortcut for HttpbinPostShortcut {
 struct HttpbinGetShortcut;
 
 impl Shortcut for HttpbinGetShortcut {
-    fn get_plugins(&self, _params: &HashMap<String, serde_json::Value>) 
-        -> Vec<Arc<dyn Plugin>> 
-    {
+    fn get_plugins(&self, _params: &HashMap<String, serde_json::Value>) -> Vec<Arc<dyn Plugin>> {
         vec![
             Arc::new(StartPlugin),
             Arc::new(MethodUrlPlugin {
@@ -68,16 +64,16 @@ async fn main() -> artful::Result<()> {
     // 使用 POST 快捷方式
     let mut params = HashMap::new();
     params.insert("data".to_string(), json!("hello world"));
-    
+
     let result = Artful::shortcut::<HttpbinPostShortcut>(params).await?;
-    
+
     if let artful::Destination::Json(json) = result {
         println!("POST Response: {}", json);
     }
-    
+
     // 使用 GET 快捷方式
     let result = Artful::shortcut::<HttpbinGetShortcut>(HashMap::new()).await?;
-    
+
     if let artful::Destination::Json(json) = result {
         println!("GET Response: {}", json);
     }
