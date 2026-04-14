@@ -8,14 +8,14 @@ license = "MIT"
 repository = "https://github.com/yansongda/artful-rs"
 
 [dependencies]
-tokio = { version = "~1", features = ["full"] }
-async-trait = "~0.1"
-reqwest = { version = "~0.12", features = ["json"] }
-serde = { version = "~1", features = ["derive"] }
-serde_json = "~1"
-tracing = "~0.1"
-thiserror = "~2"
+tokio = { version = "~1.51.1", features = ["rt-multi-thread", "macros"] }
+async-trait = { version = "~0.1.89" }
+reqwest = { version = "~0.13.2", features = ["json"] }
+serde = { version = "~1.0.228", features = ["derive"] }
+serde_json = { version = "~1.0.149" }
+tracing = { version = "~0.1.44" }
+thiserror = { version = "~2.0.18" }
 
 [dev-dependencies]
-tokio-test = "~0.4"
-wiremock = "~0.6"
+tokio-test = { version = "~0.4.5" }
+wiremock = { version = "~0.6.5" }
