@@ -7,6 +7,7 @@ pub mod config;
 pub mod http;
 pub mod plugin;
 pub mod flow_ctrl;
+pub mod shortcut;
 
 pub use error::{ArtfulError, Result};
 pub use direction::{Direction, DirectionKind, Destination};
@@ -17,3 +18,4 @@ pub use config::{Config, LoggerConfig};
 pub use http::get_client;
 pub use plugin::Plugin;
 pub use flow_ctrl::{FlowCtrl, Next};
+pub use shortcut::Shortcut;
