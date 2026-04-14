@@ -1,11 +1,11 @@
 //! 基础使用示例
 
+use artful::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
 use artful::{Artful, Plugin, Rocket, flow_ctrl::Next};
-use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
 use async_trait::async_trait;
-use std::sync::Arc;
-use std::collections::HashMap;
 use serde_json::json;
+use std::collections::HashMap;
+use std::sync::Arc;
 
 /// 设置 HTTP 方法和 URL 的插件
 struct MethodUrlPlugin {
@@ -40,7 +40,7 @@ async fn main() -> artful::Result<()> {
     ];
 
     let result = Artful::artful(params, plugins).await?;
-    
+
     if let artful::Destination::Json(json) = result {
         println!("Response: {}", json);
     }

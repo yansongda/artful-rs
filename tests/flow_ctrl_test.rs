@@ -11,7 +11,11 @@ struct TestPlugin {
 
 #[async_trait]
 impl Plugin for TestPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: artful::flow_ctrl::Next<'_>) -> artful::Result<()> {
+    async fn assembly(
+        &self,
+        rocket: &mut Rocket,
+        next: artful::flow_ctrl::Next<'_>,
+    ) -> artful::Result<()> {
         rocket
             .payload
             .insert("visited".to_string(), serde_json::json!(self.name.clone()));
@@ -44,7 +48,11 @@ async fn test_flow_ctrl_cease() {
 
     #[async_trait]
     impl Plugin for CeasePlugin {
-        async fn assembly(&self, rocket: &mut Rocket, _next: artful::flow_ctrl::Next<'_>) -> artful::Result<()> {
+        async fn assembly(
+            &self,
+            rocket: &mut Rocket,
+            _next: artful::flow_ctrl::Next<'_>,
+        ) -> artful::Result<()> {
             rocket
                 .payload
                 .insert("ceased".to_string(), serde_json::json!(true));

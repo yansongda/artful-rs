@@ -10,8 +10,8 @@
 //! - [`Artful`] - 框架主入口
 
 pub mod direction;
-pub mod error;
 pub mod directions;
+pub mod error;
 pub use directions::JsonDirection;
 pub mod artful;
 pub mod config;

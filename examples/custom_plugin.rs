@@ -1,11 +1,11 @@
 //! 自定义插件示例 - 签名插件
 
+use artful::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
 use artful::{Artful, Plugin, Rocket, flow_ctrl::Next};
-use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
 use async_trait::async_trait;
-use std::sync::Arc;
-use std::collections::HashMap;
 use serde_json::json;
+use std::collections::HashMap;
+use std::sync::Arc;
 
 /// 设置 HTTP 方法和 URL 的插件
 struct MethodUrlPlugin {
@@ -30,10 +30,10 @@ struct SignaturePlugin {
 #[async_trait]
 impl Plugin for SignaturePlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
-        rocket.config.headers.insert(
-            "X-Signature".to_string(),
-            format!("sign-{}", self.api_key),
-        );
+        rocket
+            .config
+            .headers
+            .insert("X-Signature".to_string(), format!("sign-{}", self.api_key));
         rocket.config.headers.insert(
             "Authorization".to_string(),
             format!("Bearer {}", self.api_key),
@@ -63,7 +63,7 @@ async fn main() -> artful::Result<()> {
     ];
 
     let result = Artful::artful(params, plugins).await?;
-    
+
     if let artful::Destination::Json(json) = result {
         println!("Response: {}", json);
     }
