@@ -17,28 +17,13 @@
 
 use std::sync::Arc;
 
+/// 响应解析器 trait
 #[async_trait::async_trait]
 pub trait Direction: Send + Sync + std::fmt::Debug {
     async fn parse(&self, rocket: &mut crate::Rocket) -> crate::Result<Destination>;
 }
 
-/// JSON 解析方向
-#[derive(Debug, Clone)]
-pub struct JsonDirection;
-
-#[async_trait::async_trait]
-impl Direction for JsonDirection {
-    async fn parse(&self, rocket: &mut crate::Rocket) -> crate::Result<Destination> {
-        match rocket.destination_origin.take() {
-            Some(response) => {
-                let text = response.text().await.map_err(crate::error::ArtfulError::RequestFailed)?;
-                Ok(Destination::Json(serde_json::from_str(&text)?))
-            }
-            None => Err(crate::error::ArtfulError::MissingResponse),
-        }
-    }
-}
-
+/// 解析策略枚举
 #[derive(Debug, Clone)]
 pub enum DirectionKind {
     JsonDirection,
@@ -47,6 +32,7 @@ pub enum DirectionKind {
     Custom(Arc<dyn Direction>),
 }
 
+/// 解析结果类型
 #[derive(Default)]
 pub enum Destination {
     Json(serde_json::Value),

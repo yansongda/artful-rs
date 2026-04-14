@@ -12,7 +12,8 @@
 use async_trait::async_trait;
 
 use crate::Rocket;
-use crate::direction::{Destination, Direction, DirectionKind, JsonDirection};
+use crate::direction::{Destination, Direction, DirectionKind};
+use crate::directions::JsonDirection;
 use crate::error::ArtfulError;
 use crate::flow_ctrl::Next;
 use crate::http::get_client;
