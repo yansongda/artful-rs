@@ -10,8 +10,9 @@
 //!
 //! # 设计说明
 //!
-//! RocketConfig 所有字段可在 plugin 中动态修改，
-//! 实现灵活的请求配置。
+//! - `params`: 原始参数，整个生命周期中保持不变
+//! - `payload`: 业务参数，由 StartPlugin 从 params 初始化，后续插件可修改
+//! - RocketConfig 所有字段可在 plugin 中动态修改
 
 use serde_json::Value;
 use std::collections::HashMap;
@@ -51,35 +52,68 @@ pub struct HttpOptions {
 }
 
 pub struct Rocket {
-    pub config: RocketConfig,
+    /// 原始参数（不变）
+    params: HashMap<String, Value>,
+
+    /// 业务参数（可修改）
     pub payload: HashMap<String, Value>,
+
+    /// Rocket 配置
+    pub config: RocketConfig,
+
+    /// HTTP 请求对象
     pub radar: Option<reqwest::Request>,
+
+    /// HTTP 原始响应
     pub destination_origin: Option<reqwest::Response>,
+
+    /// 最终解析结果
     pub destination: Option<crate::direction::Destination>,
+
+    /// 响应解析策略
     pub direction: DirectionKind,
+
+    /// 序列化器
     pub packer: Arc<dyn Packer>,
 }
 
 impl std::fmt::Debug for Rocket {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Rocket")
-            .field("config", &self.config)
+            .field("params", &self.params)
             .field("payload", &self.payload)
+            .field("config", &self.config)
             .field("direction", &self.direction)
             .finish()
     }
 }
 
 impl Rocket {
-    pub fn new(config: RocketConfig, payload: HashMap<String, Value>) -> Self {
+    /// 创建 Rocket
+    ///
+    /// params 存储原始参数，payload 初始为空（由 StartPlugin 初始化）
+    pub fn new(config: RocketConfig, params: HashMap<String, Value>) -> Self {
         Self {
+            params,
+            payload: HashMap::new(),
             config,
-            payload,
             radar: None,
             destination_origin: None,
             destination: None,
             direction: DirectionKind::CollectionDirection,
             packer: Arc::new(JsonPacker),
         }
+    }
+
+    /// 获取原始参数（不变）
+    pub fn get_params(&self) -> &HashMap<String, Value> {
+        &self.params
+    }
+
+    /// 合并参数到 payload
+    ///
+    /// 将 params 中的参数合并到 payload，用于 StartPlugin 初始化 payload
+    pub fn merge_payload(&mut self, params: HashMap<String, Value>) {
+        self.payload.extend(params);
     }
 }
