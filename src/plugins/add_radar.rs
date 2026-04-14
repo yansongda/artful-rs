@@ -19,6 +19,7 @@ use crate::http::get_client;
 use crate::plugin::Plugin;
 
 /// 构建 HTTP Request 插件
+#[derive(Clone, Copy, Debug, Default)]
 pub struct AddRadarPlugin;
 
 #[async_trait]

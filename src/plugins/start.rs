@@ -13,6 +13,7 @@ use crate::flow_ctrl::Next;
 use crate::plugin::Plugin;
 
 /// 初始化插件
+#[derive(Clone, Copy, Debug, Default)]
 pub struct StartPlugin;
 
 #[async_trait]

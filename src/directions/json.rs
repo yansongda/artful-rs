@@ -4,9 +4,9 @@
 
 use async_trait::async_trait;
 
-use crate::direction::Direction;
+use crate::direction::{Destination, Direction};
 use crate::error::ArtfulError;
-use crate::{Destination, Rocket};
+use crate::Rocket;
 
 /// JSON 解析方向
 #[derive(Debug, Clone)]
@@ -18,7 +18,11 @@ impl Direction for JsonDirection {
         match rocket.destination_origin.take() {
             Some(response) => {
                 let text = response.text().await.map_err(ArtfulError::RequestFailed)?;
-                Ok(Destination::Json(serde_json::from_str(&text)?))
+                serde_json::from_str(&text)
+                    .map(Destination::Json)
+                    .map_err(|e| ArtfulError::JsonDeserializeError {
+                        message: e.to_string(),
+                    })
             }
             None => Err(ArtfulError::MissingResponse),
         }
