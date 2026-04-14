@@ -1,3 +1,27 @@
+//! 插件 trait 定义
+//!
+//! 定义插件接口，是洋葱模型的核心。
+//!
+//! # 插件编写模式
+//!
+//! ```rust
+//! use artful::{Plugin, Rocket, flow_ctrl::Next};
+//! use async_trait::async_trait;
+//!
+//! pub struct MyPlugin;
+//!
+//! #[async_trait]
+//! impl Plugin for MyPlugin {
+//!     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+//!         // 前向逻辑：修改 rocket
+//!         
+//!         next.call(rocket).await;  // 调用下一层
+//!         
+//!         // 后向逻辑：处理响应
+//!     }
+//! }
+//! ```
+
 use async_trait::async_trait;
 
 use crate::Rocket;

@@ -16,26 +16,44 @@
 
 ```toml
 [dependencies]
-artful = "0.1.0"
+artful = "~0.1"
 ```
+
+> 使用 `~` 版本符号确保依赖兼容性，`~0.1` 表示兼容 0.1.x 的所有版本。
 
 ## 快速开始
 
 ### 基础使用
 
 ```rust
-use artful::{Artful, RocketConfig};
+use artful::{Artful, RocketConfig, Plugin, Rocket, flow_ctrl::Next};
 use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use async_trait::async_trait;
 use std::sync::Arc;
 use std::collections::HashMap;
 use serde_json::json;
 
+/// 设置 HTTP 方法和 URL 的插件
+struct MethodUrlPlugin {
+    method: reqwest::Method,
+    url: String,
+}
+
+#[async_trait]
+impl Plugin for MethodUrlPlugin {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+        rocket.config.method = self.method.clone();
+        rocket.config.url = self.url.clone();
+        next.call(rocket).await;
+    }
+}
+
 #[tokio::main]
 async fn main() -> artful::Result<()> {
-    let config = RocketConfig {
+    // 使用插件设置 method 和 url
+    let method_url_plugin = MethodUrlPlugin {
         method: reqwest::Method::POST,
         url: "https://api.example.com/orders".to_string(),
-        ..Default::default()
     };
 
     let payload = HashMap::from([
@@ -44,13 +62,14 @@ async fn main() -> artful::Result<()> {
     ]);
 
     let plugins: Vec<Arc<dyn artful::Plugin>> = vec![
-        Arc::new(StartPlugin),
+        Arc::new(method_url_plugin),
         Arc::new(AddPayloadBodyPlugin),
         Arc::new(AddRadarPlugin),
         Arc::new(ParserPlugin),
     ];
 
-    let result = Artful::artful(config, payload, plugins).await?;
+    // RocketConfig 使用默认值，method/url 由插件设置
+    let result = Artful::artful(RocketConfig::default(), payload, plugins).await?;
     
     if let artful::Destination::Collection(json) = result {
         println!("Response: {}", json);

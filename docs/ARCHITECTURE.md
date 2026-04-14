@@ -813,11 +813,15 @@ wiremock = "0.6"
 ### v0.1.0 - MVP
 
 - [x] 核心架构设计
-- [ ] 核心架构实现（Rocket, FlowCtrl, Plugin）
-- [ ] 内置插件（Start, AddPayloadBody, AddRadar, Parser, Log）
-- [ ] reqwest HTTP 客户端单例封装
-- [ ] JSON Packer
-- [ ] 基础测试覆盖
+- [x] 核心架构实现（Rocket, FlowCtrl, Plugin）
+- [x] 内置插件（Start, AddPayloadBody, AddRadar, Parser, Log）
+- [x] reqwest HTTP 客户端单例封装
+- [x] JSON Packer
+- [x] Direction 解析策略（CollectionDirection, ResponseDirection 等）
+- [x] Artful 主入口（artful, shortcut, raw 方法）
+- [x] Shortcut trait
+- [x] 基础测试覆盖（18 tests）
+- [x] README 文档
 
 ### v0.2.0 - 增强
 

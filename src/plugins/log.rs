@@ -1,9 +1,18 @@
+//! 日志记录插件
+//!
+//! 记录请求生命周期日志。
+//!
+//! # 行为
+//!
+//! - 前向：记录请求开始（method, url）
+//! - 后向：记录请求完成（status, elapsed_ms）
+
 use async_trait::async_trait;
 use std::time::Instant;
 
+use crate::Rocket;
 use crate::flow_ctrl::Next;
 use crate::plugin::Plugin;
-use crate::Rocket;
 
 /// 日志记录插件
 pub struct LogPlugin;

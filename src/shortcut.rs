@@ -1,3 +1,9 @@
+//! 快捷方式 trait 定义
+//!
+//! 定义插件组合的快捷方式接口。
+//!
+//! 用于简化多个 API 使用相同插件组合的场景。
+
 use std::collections::HashMap;
 use std::sync::Arc;
 
