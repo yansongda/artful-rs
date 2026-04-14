@@ -29,7 +29,7 @@ artful = "~0.1"
 use artful::{Artful, Config};
 
 // 初始化框架配置（可选）
-// config._force = true 时强制覆盖已存在的配置
+// 首次调用成功返回 true，后续调用返回 false（OnceLock 不支持覆盖）
 Artful::config(Config::default());
 ```
 
