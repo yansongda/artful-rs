@@ -36,11 +36,14 @@ Rocket 是整个请求生命周期中的数据载体。
 ```rust
 /// 请求载体 - 携带整个请求生命周期中的所有数据
 pub struct Rocket {
-    /// Rocket 配置（固定参数，类型安全）
-    pub config: RocketConfig,
+    /// 原始参数（不变）
+    params: HashMap<String, Value>,
     
     /// 业务参数（动态）
     pub payload: HashMap<String, Value>,
+    
+    /// Rocket 配置（可修改）
+    pub config: RocketConfig,
     
     /// HTTP 请求对象（最终发送的请求）
     pub radar: Option<reqwest::Request>,
@@ -51,21 +54,18 @@ pub struct Rocket {
     /// 最终解析结果
     pub destination: Option<Destination>,
     
-    /// 响应解析策略
-    pub direction: DirectionKind,
-    
     /// 序列化器
     pub packer: Arc<dyn Packer>,
 }
 ```
 
 **设计说明**：
-- `config` - 固定配置参数（method、url、headers 等），类型安全
+- `params` - 原始参数，整个生命周期中保持不变
 - `payload` - 业务参数，动态 HashMap
+- `config` - 请求配置，包含 method、url、headers、direction 等
 - `radar` - 最终构建的 HTTP Request
 - `destination_origin` - HTTP 响应
 - `destination` - 解析后的结果
-- `direction` - 响应解析策略
 - `packer` - 序列化器
 
 ### 2.2 RocketConfig - 配置参数
@@ -93,6 +93,9 @@ pub struct RocketConfig {
     
     /// 是否返回 Rocket（调试用，可动态设置）
     pub return_rocket: bool,
+    
+    /// 响应解析策略（默认 JsonDirection，可动态修改）
+    pub direction: DirectionKind,
 }
 
 /// HTTP 请求选项
@@ -116,6 +119,7 @@ pub struct HttpOptions {
 | `_body` | `config.body` |
 | `_http.timeout` | `config.http.timeout` |
 | `_return_rocket` | `config.return_rocket` |
+| `_direction` | `config.direction` |
 
 **优势**：
 - 类型安全：字段类型明确，编译时检查
@@ -123,7 +127,76 @@ pub struct HttpOptions {
 - 清晰分离：配置参数与业务参数分离
 - 可扩展：添加新配置只需修改 RocketConfig
 
-### 2.3 Plugin - 插件
+### 2.3 Config - 全局框架配置
+
+Config 是框架级别的全局配置，通过 `Artful::config()` 初始化，支持任意扩展参数。
+
+```rust
+/// 框架全局配置
+#[derive(Debug, Clone)]
+pub struct Config {
+    /// 是否强制覆盖已存在的配置
+    pub _force: bool,
+    
+    /// 日志配置
+    pub logger: LoggerConfig,
+    
+    /// HTTP 默认选项
+    pub http: HttpOptions,
+    
+    /// 扩展配置：支持任意渠道/模块参数
+    pub extra: HashMap<String, Value>,
+}
+
+/// 日志配置
+#[derive(Debug, Clone)]
+pub struct LoggerConfig {
+    pub enable: bool,
+    pub level: String,
+}
+```
+
+**extra 字段用途**：
+- 存储任意渠道配置（如支付宝、微信支付配置）
+- 支持动态扩展，无需修改 Config 结构
+- 与 PHP 版本的灵活配置模式兼容
+
+**使用示例**：
+
+```rust
+use artful::{Artful, Config, HttpOptions};
+use serde_json::json;
+use std::collections::HashMap;
+
+let mut extra = HashMap::new();
+extra.insert("alipay".to_string(), json!({
+    "app_id": "2016082000295641",
+    "app_secret_cert": "...",
+}));
+extra.insert("wechat".to_string(), json!({
+    "mch_id": "...",
+    "mch_secret_key": "...",
+}));
+
+let config = Config {
+    http: HttpOptions {
+        timeout: Some(5),
+        connect_timeout: Some(3),
+    },
+    extra,
+    ..Default::default()
+};
+
+Artful::config(config);
+
+// 后续获取配置
+let global_config = Artful::get_config();
+if let Some(alipay) = global_config.extra.get("alipay") {
+    let app_id = alipay.get("app_id");
+}
+```
+
+### 2.4 Plugin - 插件
 
 插件是洋葱模型的核心。
 
@@ -180,7 +253,7 @@ impl Plugin for MyPlugin {
 }
 ```
 
-### 2.4 FlowCtrl - 流向控制器
+### 2.5 FlowCtrl - 流向控制器
 
 FlowCtrl 控制洋葱模型的执行流程，借鉴 [salvo](https://github.com/salvo-rs/salvo) 的设计。
 
@@ -277,7 +350,7 @@ impl FlowCtrl {
 │   └─────────────────────────────────────────────────────┘
 ```
 
-### 2.5 Shortcut - 快捷方式
+### 2.6 Shortcut - 快捷方式
 
 Shortcut 是一系列插件的组合，方便快速调用特定 API。
 
@@ -285,7 +358,7 @@ Shortcut 是一系列插件的组合，方便快速调用特定 API。
 /// 快捷方式 trait
 pub trait Shortcut {
     /// 返回插件列表
-    fn get_plugins(&self, config: &RocketConfig, payload: &HashMap<String, Value>) 
+    fn get_plugins(&self, params: &HashMap<String, Value>) 
         -> Vec<Arc<dyn Plugin>>;
 }
 
@@ -294,7 +367,7 @@ pub trait Shortcut {
 pub struct QueryOrderShortcut;
 
 impl Shortcut for QueryOrderShortcut {
-    fn get_plugins(&self, config: &RocketConfig, payload: &HashMap<String, Value>) 
+    fn get_plugins(&self, params: &HashMap<String, Value>) 
         -> Vec<Arc<dyn Plugin>> 
     {
         vec![
@@ -319,14 +392,24 @@ impl Shortcut for QueryOrderShortcut {
 pub struct Artful;
 
 impl Artful {
+    /// 初始化框架全局配置
+    pub fn config(config: Config) -> bool {
+        // 首次调用时设置配置，后续调用返回 false（除非 config._force = true）
+    }
+    
+    /// 获取全局配置
+    pub fn get_config() -> &'static Config;
+    
+    /// 检查是否已初始化配置
+    pub fn has_config() -> bool;
+    
     /// 执行插件链
     pub async fn artful(
-        config: RocketConfig,
-        payload: HashMap<String, Value>,
+        params: HashMap<String, Value>,
         plugins: Vec<Arc<dyn Plugin>>,
     ) -> Result<Destination> {
-        // 构建载体
-        let mut rocket = Rocket::new(config, payload);
+        // 构建载体（params 存储原始参数，payload 初始为空）
+        let mut rocket = Rocket::new(params);
         
         // 构建流向控制器
         let mut ctrl = FlowCtrl::new(plugins);
@@ -340,12 +423,11 @@ impl Artful {
     
     /// 使用快捷方式执行请求
     pub async fn shortcut<S: Shortcut + Default>(
-        config: RocketConfig,
-        payload: HashMap<String, Value>,
+        params: HashMap<String, Value>,
     ) -> Result<Destination> {
         let shortcut = S::default();
-        let plugins = shortcut.get_plugins(&config, &payload);
-        Self::artful(config, payload, plugins).await
+        let plugins = shortcut.get_plugins(&params);
+        Self::artful(params, plugins).await
     }
     
     /// 直接调用 HTTP（跳过插件）
@@ -408,8 +490,8 @@ pub trait Direction: Send + Sync {
 /// 响应解析策略
 #[derive(Clone)]
 pub enum DirectionKind {
-    /// 解析为 JSON Collection（默认）
-    CollectionDirection,
+    /// 解析为 JSON（默认）
+    JsonDirection,
     /// 返回原始 Response
     ResponseDirection,
     /// 不发起 HTTP 请求
@@ -423,8 +505,8 @@ pub enum DirectionKind {
 /// 解析结果
 #[derive(Debug)]
 pub enum Destination {
-    /// JSON Collection（默认）
-    Collection(Value),
+    /// JSON 值（默认）
+    Json(Value),
     /// 原始响应
     Response(reqwest::Response),
     /// Rocket 本身（用于调试）
@@ -526,7 +608,7 @@ pub struct ParserPlugin;
 impl Plugin for ParserPlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
         // 不发起请求
-        if rocket.direction == DirectionKind::NoHttpRequestDirection {
+        if rocket.config.direction == DirectionKind::NoHttpRequestDirection {
             next.call(rocket).await;
             return;
         }
@@ -545,9 +627,9 @@ impl Plugin for ParserPlugin {
         rocket.destination_origin = Some(response);
         
         // 解析响应
-        match &rocket.direction {
-            DirectionKind::CollectionDirection => {
-                let direction = CollectionDirection;
+        match &rocket.config.direction {
+            DirectionKind::JsonDirection => {
+                let direction = JsonDirection;
                 rocket.destination = Some(direction.parse(rocket).await?);
             }
             DirectionKind::ResponseDirection => {
@@ -576,66 +658,92 @@ impl Plugin for ParserPlugin {
 
 ## 五、使用示例
 
-### 5.1 基础使用
+### 5.1 初始化框架
 
 ```rust
-use artful::{Artful, RocketConfig, Method};
+use artful::{Artful, Config};
+
+// 初始化框架配置（可选）
+// config._force = true 时强制覆盖已存在的配置
+Artful::config(Config::default());
+```
+
+### 5.2 基础使用
+
+```rust
+use artful::{Artful, Plugin, Rocket, flow_ctrl::Next};
 use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use async_trait::async_trait;
 use std::sync::Arc;
+use std::collections::HashMap;
 use serde_json::json;
 
-// 构建配置
-let config = RocketConfig {
-    method: reqwest::Method::POST,
-    url: "https://api.example.com/orders".to_string(),
-    headers: HashMap::from([
-        ("Authorization".to_string(), "Bearer token".to_string()),
-    ]),
-    http: HttpOptions {
-        timeout: Some(30),
-        ..Default::default()
-    },
-    ..Default::default()
-};
+struct MethodUrlPlugin {
+    method: reqwest::Method,
+    url: String,
+}
 
-// 构建业务参数
-let payload = HashMap::from([
-    ("order_id", json!("123")),
-    ("amount", json!("100")),
-]);
+#[async_trait]
+impl Plugin for MethodUrlPlugin {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+        rocket.config.method = self.method.clone();
+        rocket.config.url = self.url.clone();
+        next.call(rocket).await;
+    }
+}
 
-// 定义插件链
-let plugins: Vec<Arc<dyn Plugin>> = vec![
-    Arc::new(StartPlugin),
-    Arc::new(AddPayloadBodyPlugin),
-    Arc::new(AddRadarPlugin),
-    Arc::new(ParserPlugin),
-];
+#[tokio::main]
+async fn main() -> artful::Result<()> {
+    let params = HashMap::from([
+        ("order_id", json!("123")),
+        ("amount", json!(100)),
+    ]);
 
-// 执行请求
-let result = Artful::artful(config, payload, plugins).await?;
+    let plugins: Vec<Arc<dyn artful::Plugin>> = vec![
+        Arc::new(StartPlugin),
+        Arc::new(MethodUrlPlugin {
+            method: reqwest::Method::POST,
+            url: "https://api.example.com/orders".to_string(),
+        }),
+        Arc::new(AddPayloadBodyPlugin),
+        Arc::new(AddRadarPlugin),
+        Arc::new(ParserPlugin),
+    ];
 
-// 解析结果
-if let Destination::Collection(json) = result {
-    println!("Response: {}", json);
+    let result = Artful::artful(params, plugins).await?;
+    
+    if let artful::Destination::Json(json) = result {
+        println!("Response: {}", json);
+    }
+
+    Ok(())
 }
 ```
 
-### 5.2 使用快捷方式
+### 5.3 使用 Shortcut 快捷方式
 
 ```rust
-use artful::{Artful, Shortcut, RocketConfig, Method};
+use artful::{Artful, Shortcut, Plugin};
+use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use std::sync::Arc;
+use std::collections::HashMap;
 
-// 定义快捷方式
 #[derive(Default)]
-struct QueryOrderShortcut;
+struct MyApiShortcut {
+    method: reqwest::Method,
+    url: String,
+}
 
-impl Shortcut for QueryOrderShortcut {
-    fn get_plugins(&self, config: &RocketConfig, payload: &HashMap<String, Value>) 
+impl Shortcut for MyApiShortcut {
+    fn get_plugins(&self, _params: &HashMap<String, serde_json::Value>) 
         -> Vec<Arc<dyn Plugin>> 
     {
         vec![
             Arc::new(StartPlugin),
+            Arc::new(MethodUrlPlugin {
+                method: self.method.clone(),
+                url: self.url.clone(),
+            }),
             Arc::new(AddPayloadBodyPlugin),
             Arc::new(AddRadarPlugin),
             Arc::new(ParserPlugin),
@@ -643,22 +751,15 @@ impl Shortcut for QueryOrderShortcut {
     }
 }
 
-// 使用快捷方式调用
-let config = RocketConfig {
-    method: reqwest::Method::GET,
-    url: "https://api.example.com/orders/123".to_string(),
-    ..Default::default()
-};
-
-let result = Artful::shortcut::<QueryOrderShortcut>(config, HashMap::new()).await?;
+let result = Artful::shortcut::<MyApiShortcut>(HashMap::new()).await?;
 ```
 
-### 5.3 自定义插件
+### 5.4 自定义插件
 
 ```rust
-use artful::{Plugin, Rocket, Next};
+use artful::{Plugin, Rocket, flow_ctrl::Next};
+use async_trait::async_trait;
 
-/// 签名插件
 pub struct SignaturePlugin {
     api_key: String,
 }
@@ -666,19 +767,12 @@ pub struct SignaturePlugin {
 #[async_trait]
 impl Plugin for SignaturePlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
-        // 前向：生成签名
-        let payload_json = rocket.packer.pack(&rocket.payload)?;
-        let signature = sign(&payload_json, &self.api_key);
+        rocket.config.headers.insert(
+            "X-Signature".to_string(),
+            sign(&self.api_key, &rocket.payload),
+        );
         
-        rocket.config.headers.insert("X-Signature".to_string(), signature);
-        
-        // 调用下一层
         next.call(rocket).await;
-        
-        // 后向：验签（可选）
-        if let Some(resp) = rocket.destination_origin.as_ref() {
-            // 验证响应签名
-        }
     }
 }
 ```
@@ -690,16 +784,19 @@ impl Plugin for SignaturePlugin {
 采用 Rust 标准惯例：**Trait 定义放在对应模块顶层**。
 
 ```
-artful/
+rs-artful/
 ├── Cargo.toml
+├── Cargo.lock
+├── README.md
+├── .gitignore
 ├── src/
 │   ├── lib.rs                  # 框架入口，导出公共 API
 │   │
 │   ├── artful.rs               # Artful 主入口
-│   ├── rocket.rs               # Rocket + RocketConfig + Method + HttpOptions
+│   ├── rocket.rs               # Rocket + RocketConfig + HttpOptions
 │   ├── flow_ctrl.rs            # FlowCtrl 流向控制 + Next 闭包
-│   ├── config.rs               # Config 配置管理
-│   ├── error.rs                # Error 错误定义
+│   ├── config.rs               # Config + LoggerConfig
+│   ├── error.rs                # ArtfulError 错误定义
 │   │
 │   ├── plugin.rs               # Plugin trait
 │   ├── plugins/                # 内置插件实现
@@ -707,18 +804,11 @@ artful/
 │   │   ├── start.rs            # StartPlugin
 │   │   ├── add_radar.rs        # AddRadarPlugin
 │   │   ├── parser.rs           # ParserPlugin
-│   │   ├── add_payload_body.rs # AddPayloadBodyPlugin
-│   │   └── log.rs              # LogPlugin
+│   │   └── add_payload_body.rs # AddPayloadBodyPlugin
 │   │
 │   ├── shortcut.rs             # Shortcut trait
 │   │
-│   ├── direction.rs            # Direction trait + DirectionKind + Destination
-│   ├── directions/             # 内置 Direction 实现
-│   │   ├── mod.rs              # 导出所有内置 Direction
-│   │   ├── collection.rs       # CollectionDirection
-│   │   ├── response.rs         # ResponseDirection
-│   │   ├── no_http.rs          # NoHttpRequestDirection
-│   │   └── origin.rs           # OriginResponseDirection
+│   ├── direction.rs            # Direction trait + DirectionKind + Destination + JsonDirection
 │   │
 │   ├── packer.rs               # Packer trait
 │   ├── packers/                # 内置 Packer 实现
@@ -727,40 +817,44 @@ artful/
 │   │
 │   └── http.rs                 # HTTP 客户端封装（reqwest 单例）
 │
+├── examples/
+│   ├── basic.rs                # 基础使用示例
+│   ├── custom_plugin.rs        # 自定义插件示例
+│   ├── config.rs               # 配置初始化示例
+│   ├── shortcut.rs             # Shortcut 快捷方式示例
+│   └── direction.rs            # Direction 响应解析策略示例
+│
 ├── tests/
-│   ├── rocket_test.rs
+│   ├── artful_test.rs
+│   ├── direction_test.rs
 │   ├── flow_ctrl_test.rs
-│   ├── plugin_test.rs
 │   ├── integration_test.rs
+│   ├── packer_test.rs
+│   ├── rocket_test.rs
 │   └── shortcut_test.rs
 │
-├── examples/
-│   ├── basic.rs
-│   ├── custom_plugin.rs
-│   └── alipay_example.rs
+├── target/                     # 编译输出（gitignore）
 │
 └── docs/
-    ├── ARCHITECTURE.md         # 架构设计文档
-    ├── PLUGIN.md               # 插件开发指南
-    └── EXAMPLES.md             # 使用示例
+    └── ARCHITECTURE.md         # 架构设计文档
 ```
 
 ### 模块说明
 
 | 模块 | 说明 | Trait/类型 |
 |------|------|-----------|
+| `src/lib.rs` | 框架入口 | 导出公共 API |
 | `src/artful.rs` | 主入口 | `Artful` struct |
-| `src/rocket.rs` | 请求载体 + 配置 | `Rocket`, `RocketConfig`, `Method`, `HttpOptions` |
+| `src/rocket.rs` | 请求载体 + 配置 | `Rocket`, `RocketConfig`, `HttpOptions` |
 | `src/flow_ctrl.rs` | 流向控制器 | `FlowCtrl`, `Next` |
+| `src/config.rs` | 全局配置 | `Config`, `LoggerConfig` |
 | `src/plugin.rs` | 插件 trait | `Plugin` trait |
-| `src/plugins/` | 内置插件 | `StartPlugin`, `AddRadarPlugin`, `ParserPlugin` 等 |
+| `src/plugins/` | 内置插件 | `StartPlugin`, `AddRadarPlugin`, `ParserPlugin`, `AddPayloadBodyPlugin` |
 | `src/shortcut.rs` | 快捷方式 trait | `Shortcut` trait |
-| `src/direction.rs` | 解析策略 | `Direction`, `DirectionKind`, `Destination` |
-| `src/directions/` | 内置解析器 | `CollectionDirection`, `ResponseDirection` 等 |
+| `src/direction.rs` | 解析策略 | `Direction`, `DirectionKind`, `Destination`, `JsonDirection` |
 | `src/packer.rs` | 序列化 trait | `Packer` trait |
 | `src/packers/` | 内置序列化器 | `JsonPacker` |
 | `src/http.rs` | HTTP 客户端 | reqwest 全局单例 |
-| `src/config.rs` | 配置 | `Config`, `LoggerConfig` |
 | `src/error.rs` | 错误 | `ArtfulError` enum |
 
 ---
@@ -817,7 +911,7 @@ wiremock = "0.6"
 - [x] 内置插件（Start, AddPayloadBody, AddRadar, Parser, Log）
 - [x] reqwest HTTP 客户端单例封装
 - [x] JSON Packer
-- [x] Direction 解析策略（CollectionDirection, ResponseDirection 等）
+- [x] Direction 解析策略（JsonDirection, ResponseDirection 等）
 - [x] Artful 主入口（artful, shortcut, raw 方法）
 - [x] Shortcut trait
 - [x] 基础测试覆盖（18 tests）

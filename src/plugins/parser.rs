@@ -4,7 +4,7 @@
 //!
 //! # 行为
 //!
-//! - 检查 rocket.direction，决定是否发起请求
+//! - 检查 rocket.config.direction，决定是否发起请求
 //! - 执行 HTTP 请求，存入 rocket.destination_origin
 //! - 根据 DirectionKind 解析响应
 //! - 结果存入 rocket.destination
@@ -23,7 +23,7 @@ pub struct ParserPlugin;
 #[async_trait]
 impl Plugin for ParserPlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
-        if let DirectionKind::NoHttpRequestDirection = rocket.direction {
+        if let DirectionKind::NoHttpRequestDirection = rocket.config.direction {
             next.call(rocket).await;
             return;
         }
@@ -39,7 +39,7 @@ impl Plugin for ParserPlugin {
         if let Ok(response) = client.execute(request).await {
             rocket.destination_origin = Some(response);
 
-            let direction_kind = rocket.direction.clone();
+            let direction_kind = rocket.config.direction.clone();
 
             match direction_kind {
                 DirectionKind::JsonDirection => {

@@ -4,7 +4,10 @@
 //! - [`Config`] - 框架主配置
 //! - [`LoggerConfig`] - 日志配置
 
-use crate::direction::DirectionKind;
+use serde_json::Value;
+use std::collections::HashMap;
+
+use crate::rocket::HttpOptions;
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -12,7 +15,27 @@ pub struct Config {
     pub _force: bool,
 
     pub logger: LoggerConfig,
-    pub default_direction: DirectionKind,
+    pub http: HttpOptions,
+
+    /// 扩展配置：支持任意渠道/模块参数
+    ///
+    /// # 示例
+    ///
+    /// ```rust
+    /// use artful::Config;
+    /// use serde_json::json;
+    /// use std::collections::HashMap;
+    ///
+    /// let mut extra = HashMap::new();
+    /// extra.insert("name".to_string(), json!("yansongda"));
+    /// extra.insert("http".to_string(), json!({"timeout": 5.0}));
+    ///
+    /// let config = Config {
+    ///     extra,
+    ///     ..Default::default()
+    /// };
+    /// ```
+    pub extra: HashMap<String, Value>,
 }
 
 impl Default for Config {
@@ -20,7 +43,8 @@ impl Default for Config {
         Self {
             _force: false,
             logger: LoggerConfig::default(),
-            default_direction: DirectionKind::JsonDirection,
+            http: HttpOptions::default(),
+            extra: HashMap::new(),
         }
     }
 }

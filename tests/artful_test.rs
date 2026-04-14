@@ -63,7 +63,7 @@ async fn test_artful_with_response_direction() {
     let mut rocket = Rocket::new(HashMap::new());
     rocket.config.method = reqwest::Method::GET;
     rocket.config.url = mock_server.uri() + "/raw";
-    rocket.direction = DirectionKind::ResponseDirection;
+    rocket.config.direction = DirectionKind::ResponseDirection;
 
     let plugins: Vec<Arc<dyn Plugin>> = vec![Arc::new(AddRadarPlugin), Arc::new(ParserPlugin)];
 
