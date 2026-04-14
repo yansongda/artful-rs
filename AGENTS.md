@@ -14,11 +14,11 @@
 # Build & check
 cargo check --all-features
 
-# Test (all 59 tests)
+# Test (59 tests)
 cargo test --all-features
 
-# Lint (required before commit)
-cargo fmt --all -- --check
+# Format & lint
+cargo fmt --all
 cargo clippy -- -D warnings
 
 # Run examples
@@ -30,6 +30,16 @@ cargo run --example direction
 
 # Publish (automated via GitHub tag)
 # Manual: cargo publish --token $CARGO_TOKEN
+```
+
+## Before Commit (Mandatory)
+
+After modifying any `.rs` file, ensure all three pass:
+
+```bash
+cargo fmt --all -- --check  # Format check
+cargo clippy -- -D warnings # Lint check
+cargo test --all-features   # All tests
 ```
 
 ## Architecture

@@ -5,8 +5,8 @@
 use serde_json::Value;
 use std::collections::HashMap;
 
-use crate::packer::Packer;
 use crate::Result;
+use crate::packer::Packer;
 
 #[derive(Debug)]
 pub struct JsonPacker;

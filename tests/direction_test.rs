@@ -1,5 +1,5 @@
-use artisan::direction::{Destination, Direction, DirectionKind};
 use artisan::Rocket;
+use artisan::direction::{Destination, Direction, DirectionKind};
 use async_trait::async_trait;
 use serde_json::json;
 use std::sync::Arc;
@@ -53,12 +53,16 @@ impl Direction for CustomJsonDirection {
     async fn parse(&self, rocket: &mut Rocket) -> artisan::Result<Destination> {
         match rocket.destination_origin.take() {
             Some(response) => {
-                let text = response.text().await.map_err(artisan::ArtfulError::RequestFailed)?;
-                let mut json: serde_json::Value = serde_json::from_str(&text)
-                    .map_err(|e| artisan::ArtfulError::JsonDeserializeError {
+                let text = response
+                    .text()
+                    .await
+                    .map_err(artisan::ArtfulError::RequestFailed)?;
+                let mut json: serde_json::Value = serde_json::from_str(&text).map_err(|e| {
+                    artisan::ArtfulError::JsonDeserializeError {
                         message: e.to_string(),
                         source: Some(e),
-                    })?;
+                    }
+                })?;
                 if let Some(obj) = json.as_object_mut() {
                     obj.insert("_custom_prefix".to_string(), json!(self.prefix.clone()));
                 }
@@ -71,7 +75,9 @@ impl Direction for CustomJsonDirection {
 
 #[test]
 fn test_custom_direction_kind_creation() {
-    let custom = Arc::new(CustomJsonDirection { prefix: "test_prefix".to_string() });
+    let custom = Arc::new(CustomJsonDirection {
+        prefix: "test_prefix".to_string(),
+    });
     let kind = DirectionKind::Custom(custom);
     assert!(matches!(kind, DirectionKind::Custom(_)));
 }
@@ -84,7 +90,10 @@ impl Direction for TextDirection {
     async fn parse(&self, rocket: &mut Rocket) -> artisan::Result<Destination> {
         match rocket.destination_origin.take() {
             Some(response) => {
-                let text = response.text().await.map_err(artisan::ArtfulError::RequestFailed)?;
+                let text = response
+                    .text()
+                    .await
+                    .map_err(artisan::ArtfulError::RequestFailed)?;
                 Ok(Destination::Json(json!({ "text": text })))
             }
             None => Err(artisan::ArtfulError::MissingResponse),
@@ -94,12 +103,14 @@ impl Direction for TextDirection {
 
 #[test]
 fn test_multiple_custom_directions() {
-    let custom1 = Arc::new(CustomJsonDirection { prefix: "prefix1".to_string() });
+    let custom1 = Arc::new(CustomJsonDirection {
+        prefix: "prefix1".to_string(),
+    });
     let custom2 = Arc::new(TextDirection);
-    
+
     let kind1 = DirectionKind::Custom(custom1);
     let kind2 = DirectionKind::Custom(custom2);
-    
+
     assert!(matches!(kind1, DirectionKind::Custom(_)));
     assert!(matches!(kind2, DirectionKind::Custom(_)));
 }
@@ -110,7 +121,9 @@ struct FailingDirection;
 #[async_trait]
 impl Direction for FailingDirection {
     async fn parse(&self, _rocket: &mut Rocket) -> artisan::Result<Destination> {
-        Err(artisan::ArtfulError::DirectionParseError("Custom parse failed".to_string()))
+        Err(artisan::ArtfulError::DirectionParseError(
+            "Custom parse failed".to_string(),
+        ))
     }
 }
 

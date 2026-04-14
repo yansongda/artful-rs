@@ -2,13 +2,13 @@ use artisan::FlowCtrl;
 use artisan::Rocket;
 use artisan::direction::{Destination, DirectionKind};
 use artisan::plugins::{AddRadarPlugin, ParserPlugin, StartPlugin};
-use artisan::{Artful, Plugin, flow_ctrl::Next, ArtfulError};
+use artisan::{Artful, ArtfulError, Plugin, flow_ctrl::Next};
 use async_trait::async_trait;
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-use wiremock::matchers::{method, path, header};
+use wiremock::matchers::{header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 /// 设置 HTTP 方法和 URL 的插件
@@ -104,10 +104,7 @@ async fn test_artful_raw_success() {
         .await;
 
     let client = artisan::get_client();
-    let request = client
-        .get(mock_server.uri() + "/raw-test")
-        .build()
-        .unwrap();
+    let request = client.get(mock_server.uri() + "/raw-test").build().unwrap();
 
     let response = Artful::raw(request).await.unwrap();
     assert_eq!(response.status(), 200);
@@ -145,11 +142,7 @@ async fn test_plugin_error_propagation() {
 
     #[async_trait]
     impl Plugin for ErrorPlugin {
-        async fn assembly(
-            &self,
-            _rocket: &mut Rocket,
-            _next: Next<'_>,
-        ) -> artisan::Result<()> {
+        async fn assembly(&self, _rocket: &mut Rocket, _next: Next<'_>) -> artisan::Result<()> {
             Err(ArtfulError::PluginExecutionError {
                 plugin_name: "ErrorPlugin".to_string(),
                 message: self.message.clone(),
@@ -162,11 +155,7 @@ async fn test_plugin_error_propagation() {
 
     #[async_trait]
     impl Plugin for SuccessPlugin {
-        async fn assembly(
-            &self,
-            rocket: &mut Rocket,
-            next: Next<'_>,
-        ) -> artisan::Result<()> {
+        async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
             rocket.payload.insert("success".to_string(), json!(true));
             next.call(rocket).await
         }
@@ -195,11 +184,7 @@ async fn test_plugin_chain_stops_on_error() {
 
     #[async_trait]
     impl Plugin for FirstPlugin {
-        async fn assembly(
-            &self,
-            rocket: &mut Rocket,
-            next: Next<'_>,
-        ) -> artisan::Result<()> {
+        async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
             rocket.payload.insert("first".to_string(), json!(1));
             next.call(rocket).await
         }
@@ -207,22 +192,14 @@ async fn test_plugin_chain_stops_on_error() {
 
     #[async_trait]
     impl Plugin for FailingPlugin {
-        async fn assembly(
-            &self,
-            _rocket: &mut Rocket,
-            _next: Next<'_>,
-        ) -> artisan::Result<()> {
+        async fn assembly(&self, _rocket: &mut Rocket, _next: Next<'_>) -> artisan::Result<()> {
             Err(ArtfulError::Other("plugin failed".to_string()))
         }
     }
 
     #[async_trait]
     impl Plugin for NeverRunPlugin {
-        async fn assembly(
-            &self,
-            rocket: &mut Rocket,
-            next: Next<'_>,
-        ) -> artisan::Result<()> {
+        async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
             rocket.payload.insert("never_run".to_string(), json!(true));
             next.call(rocket).await
         }
@@ -236,9 +213,9 @@ async fn test_plugin_chain_stops_on_error() {
 
     let mut rocket = Rocket::new(HashMap::new());
     let mut ctrl = FlowCtrl::new(plugins);
-    
+
     let result = ctrl.call_next(&mut rocket).await;
-    
+
     assert!(result.is_err());
     assert!(rocket.payload.contains_key("first"));
     assert!(!rocket.payload.contains_key("never_run"));
@@ -268,7 +245,7 @@ async fn test_http_404_response() {
 
     // 404 不会返回错误，而是正常解析响应
     let result = Artful::artful(HashMap::new(), plugins).await.unwrap();
-    
+
     if let Destination::Json(json) = result {
         assert_eq!(json["error"], "Not Found");
     } else {
@@ -282,7 +259,9 @@ async fn test_http_500_response() {
 
     Mock::given(method("POST"))
         .and(path("/server-error"))
-        .respond_with(ResponseTemplate::new(500).set_body_json(json!({"error": "Internal Server Error"})))
+        .respond_with(
+            ResponseTemplate::new(500).set_body_json(json!({"error": "Internal Server Error"})),
+        )
         .mount(&mock_server)
         .await;
 
@@ -298,7 +277,7 @@ async fn test_http_500_response() {
 
     // 500 不会返回错误，而是正常解析响应
     let result = Artful::artful(HashMap::new(), plugins).await.unwrap();
-    
+
     if let Destination::Json(json) = result {
         assert_eq!(json["error"], "Internal Server Error");
     } else {
@@ -313,8 +292,7 @@ async fn test_http_timeout_response() {
     Mock::given(method("GET"))
         .and(path("/slow"))
         .respond_with(
-            ResponseTemplate::new(200)
-                .set_delay(Duration::from_secs(5)) // 5秒延迟
+            ResponseTemplate::new(200).set_delay(Duration::from_secs(5)), // 5秒延迟
         )
         .mount(&mock_server)
         .await;
@@ -326,11 +304,7 @@ async fn test_http_timeout_response() {
 
     #[async_trait]
     impl Plugin for TimeoutUrlPlugin {
-        async fn assembly(
-            &self,
-            rocket: &mut Rocket,
-            next: Next<'_>,
-        ) -> artisan::Result<()> {
+        async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
             rocket.config.method = reqwest::Method::GET;
             rocket.config.url = self.url.clone();
             rocket.config.http.timeout = Some(self.timeout);
@@ -349,7 +323,7 @@ async fn test_http_timeout_response() {
     ];
 
     let result = Artful::artful(HashMap::new(), plugins).await;
-    
+
     // 请求应该超时失败
     assert!(result.is_err());
     let error = result.unwrap_err();
@@ -370,7 +344,7 @@ async fn test_http_invalid_url() {
     ];
 
     let result = Artful::artful(HashMap::new(), plugins).await;
-    
+
     assert!(result.is_err());
 }
 
@@ -387,6 +361,6 @@ async fn test_http_nonexistent_host() {
     ];
 
     let result = Artful::artful(HashMap::new(), plugins).await;
-    
+
     assert!(result.is_err());
 }

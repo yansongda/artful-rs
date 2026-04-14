@@ -77,9 +77,7 @@ impl Artful {
     }
 
     /// 使用 Shortcut 快捷方式
-    pub async fn shortcut<S: Shortcut>(
-        params: HashMap<String, Value>,
-    ) -> Result<Destination> {
+    pub async fn shortcut<S: Shortcut>(params: HashMap<String, Value>) -> Result<Destination> {
         let shortcut = S::default();
         let plugins = shortcut.get_plugins(&params);
         Self::artful(params, plugins).await
