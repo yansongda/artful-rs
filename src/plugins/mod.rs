@@ -10,16 +10,13 @@
 //! | [`AddPayloadBodyPlugin`] | 将 payload 序列化为请求体 |
 //! | [`AddRadarPlugin`] | 构建 HTTP Request |
 //! | [`ParserPlugin`] | 执行请求并解析响应 |
-//! | [`LogPlugin`] | 日志记录 |
 
 mod add_payload_body;
 mod add_radar;
-mod log;
 mod parser;
 mod start;
 
 pub use add_payload_body::AddPayloadBodyPlugin;
 pub use add_radar::AddRadarPlugin;
-pub use log::LogPlugin;
 pub use parser::ParserPlugin;
 pub use start::StartPlugin;

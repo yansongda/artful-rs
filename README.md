@@ -27,42 +27,33 @@ artful = "~0.1"
 
 ```rust
 use artful::{Artful, RocketConfig, Plugin, Rocket, flow_ctrl::Next};
-use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use artful::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::collections::HashMap;
 use serde_json::json;
 
 /// 设置 HTTP 方法和 URL 的插件
-struct MethodUrlPlugin {
-    method: reqwest::Method,
-    url: String,
-}
+struct MethodUrlPlugin;
 
 #[async_trait]
 impl Plugin for MethodUrlPlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
-        rocket.config.method = self.method.clone();
-        rocket.config.url = self.url.clone();
+        rocket.config.method = reqwest::Method::POST;
+        rocket.config.url = "https://api.example.com/orders".to_string();
         next.call(rocket).await;
     }
 }
 
 #[tokio::main]
 async fn main() -> artful::Result<()> {
-    // 使用插件设置 method 和 url
-    let method_url_plugin = MethodUrlPlugin {
-        method: reqwest::Method::POST,
-        url: "https://api.example.com/orders".to_string(),
-    };
-
     let payload = HashMap::from([
         ("order_id", json!("123")),
         ("amount", json!(100)),
     ]);
 
     let plugins: Vec<Arc<dyn artful::Plugin>> = vec![
-        Arc::new(method_url_plugin),
+        Arc::new(MethodUrlPlugin),
         Arc::new(AddPayloadBodyPlugin),
         Arc::new(AddRadarPlugin),
         Arc::new(ParserPlugin),
@@ -195,7 +186,6 @@ pub enum DirectionKind {
 | `AddPayloadBodyPlugin` | 将 payload 序列化为请求体 |
 | `AddRadarPlugin` | 构建 HTTP Request |
 | `ParserPlugin` | 执行请求并解析响应 |
-| `LogPlugin` | 日志记录 |
 
 ## 文档
 
