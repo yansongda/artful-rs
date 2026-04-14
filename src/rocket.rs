@@ -45,10 +45,19 @@ impl Default for RocketConfig {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct HttpOptions {
+    /// 请求超时（秒）
     pub timeout: Option<u64>,
+
+    /// 连接超时（秒）
     pub connect_timeout: Option<u64>,
+
+    /// 连接池空闲连接超时（秒），默认 90
+    pub pool_idle_timeout: Option<u64>,
+
+    /// 每个 host 最大空闲连接数，默认无限制
+    pub pool_max_idle_per_host: Option<usize>,
 }
 
 pub struct Rocket {

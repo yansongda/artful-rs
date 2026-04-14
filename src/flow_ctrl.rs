@@ -46,9 +46,7 @@ impl FlowCtrl {
 
         let plugin = self.plugins[self.cursor].clone();
         self.cursor += 1;
-
-        let next = Next { ctrl: self };
-        plugin.assembly(rocket, next).await
+        plugin.assembly(rocket, Next { ctrl: self }).await
     }
 
     /// 检查是否还有下一层

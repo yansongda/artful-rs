@@ -38,6 +38,7 @@ fn test_http_options_with_timeout() {
     let http = HttpOptions {
         timeout: Some(30),
         connect_timeout: Some(10),
+        ..Default::default()
     };
     assert_eq!(http.timeout, Some(30));
     assert_eq!(http.connect_timeout, Some(10));

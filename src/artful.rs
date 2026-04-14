@@ -33,35 +33,23 @@ pub struct Artful;
 impl Artful {
     /// 初始化框架全局配置
     ///
-    /// 首次调用时设置配置，后续调用返回 false（除非 config._force = true）
+    /// 首次调用时设置配置，后续调用返回 false（OnceLock 不支持覆盖）
     ///
     /// # 参数
     ///
-    /// - `config`: 框架配置，其中 `_force` 字段控制是否强制覆盖
+    /// - `config`: 框架配置
     ///
     /// # 返回
     ///
     /// - `true`: 配置成功设置
-    /// - `false`: 配置已存在且未强制覆盖
+    /// - `false`: 配置已存在，无法覆盖
     pub fn config(config: Config) -> bool {
-        if GLOBAL_CONFIG.get().is_some() && !config._force {
-            return false;
-        }
-
-        // 强制覆盖时，需要特殊处理（OnceLock 限制）
-        if config._force {
-            // OnceLock 不支持真正清除，force 模式下仍使用 get_or_init
-            // 未来可考虑使用 RwLock 或其他机制
-        }
-
-        let _ = GLOBAL_CONFIG.get_or_init(|| config);
-
-        true
+        GLOBAL_CONFIG.set(config).is_ok()
     }
 
     /// 获取全局配置
     pub fn get_config() -> &'static Config {
-        GLOBAL_CONFIG.get_or_init(|| Config::default())
+        GLOBAL_CONFIG.get_or_init(Config::default)
     }
 
     /// 检查是否已初始化配置
@@ -98,8 +86,7 @@ impl Artful {
 
     /// 直接调用 HTTP（跳过插件链）
     pub async fn raw(request: reqwest::Request) -> Result<reqwest::Response> {
-        let client = get_client();
-        client
+        get_client()
             .execute(request)
             .await
             .map_err(crate::error::ArtfulError::RequestFailed)

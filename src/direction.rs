@@ -29,13 +29,12 @@ pub struct JsonDirection;
 #[async_trait::async_trait]
 impl Direction for JsonDirection {
     async fn parse(&self, rocket: &mut crate::Rocket) -> crate::Result<Destination> {
-        if let Some(response) = rocket.destination_origin.take() {
-            let text = response.text().await
-                .map_err(crate::error::ArtfulError::RequestFailed)?;
-            let json: serde_json::Value = serde_json::from_str(&text)?;
-            Ok(Destination::Json(json))
-        } else {
-            Err(crate::error::ArtfulError::MissingResponse)
+        match rocket.destination_origin.take() {
+            Some(response) => {
+                let text = response.text().await.map_err(crate::error::ArtfulError::RequestFailed)?;
+                Ok(Destination::Json(serde_json::from_str(&text)?))
+            }
+            None => Err(crate::error::ArtfulError::MissingResponse),
         }
     }
 }

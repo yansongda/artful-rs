@@ -18,8 +18,9 @@ pub struct StartPlugin;
 #[async_trait]
 impl Plugin for StartPlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> crate::Result<()> {
-        // 将原始参数合并到 payload
-        rocket.merge_payload(rocket.get_params().clone());
+        if rocket.payload.is_empty() {
+            rocket.merge_payload(rocket.get_params().clone());
+        }
 
         next.call(rocket).await
     }

@@ -21,8 +21,7 @@ pub struct AddPayloadBodyPlugin;
 impl Plugin for AddPayloadBodyPlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> crate::Result<()> {
         if rocket.config.body.is_none() && !rocket.payload.is_empty() {
-            let body = rocket.packer.pack(&rocket.payload)?;
-            rocket.config.body = Some(body);
+            rocket.config.body = Some(rocket.packer.pack(&rocket.payload)?);
         }
 
         next.call(rocket).await

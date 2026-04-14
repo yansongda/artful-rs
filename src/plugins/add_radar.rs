@@ -24,11 +24,8 @@ pub struct AddRadarPlugin;
 #[async_trait]
 impl Plugin for AddRadarPlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> crate::Result<()> {
-        let method = rocket.config.method.clone();
-        let url = rocket.config.url.clone();
-
-        let client = get_client();
-        let mut request_builder = client.request(method, &url);
+        let mut request_builder = get_client()
+            .request(rocket.config.method.clone(), &rocket.config.url);
 
         for (key, value) in &rocket.config.headers {
             request_builder = request_builder.header(key, value);

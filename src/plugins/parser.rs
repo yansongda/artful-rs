@@ -29,34 +29,24 @@ impl Plugin for ParserPlugin {
             return next.call(rocket).await;
         }
 
-        // 检查 radar 是否存在
-        let request = rocket.radar.take()
-            .ok_or(ArtfulError::MissingRequest)?;
-
         // 发送 HTTP 请求
-        let client = get_client();
-        let response = client.execute(request).await
-            .map_err(ArtfulError::RequestFailed)?;
-        
-        rocket.destination_origin = Some(response);
+        rocket.destination_origin = Some(
+            get_client()
+                .execute(rocket.radar.take().ok_or(ArtfulError::MissingRequest)?)
+                .await
+                .map_err(ArtfulError::RequestFailed)?,
+        );
 
         // 解析响应
-        let direction_kind = rocket.config.direction.clone();
-        let destination = match direction_kind {
-            DirectionKind::JsonDirection => {
-                JsonDirection.parse(rocket).await?
-            }
-            DirectionKind::ResponseDirection => {
-                rocket.destination_origin.take()
-                    .map(Destination::Response)
-                    .ok_or(ArtfulError::MissingResponse)?
-            }
-            DirectionKind::Custom(direction) => {
-                direction.parse(rocket).await?
-            }
-            DirectionKind::NoHttpRequestDirection => {
-                Destination::None
-            }
+        let destination = match &rocket.config.direction {
+            DirectionKind::JsonDirection => JsonDirection.parse(rocket).await?,
+            DirectionKind::ResponseDirection => rocket
+                .destination_origin
+                .take()
+                .map(Destination::Response)
+                .ok_or(ArtfulError::MissingResponse)?,
+            DirectionKind::Custom(direction) => direction.clone().parse(rocket).await?,
+            DirectionKind::NoHttpRequestDirection => Destination::None,
         };
 
         rocket.destination = Some(destination);
