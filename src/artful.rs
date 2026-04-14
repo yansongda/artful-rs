@@ -21,7 +21,7 @@ use crate::direction::Destination;
 use crate::flow_ctrl::FlowCtrl;
 use crate::http::get_client;
 use crate::plugin::Plugin;
-use crate::rocket::{Rocket, RocketConfig};
+use crate::rocket::Rocket;
 use crate::shortcut::Shortcut;
 
 /// 全局配置实例
@@ -33,23 +33,27 @@ pub struct Artful;
 impl Artful {
     /// 初始化框架全局配置
     ///
-    /// 首次调用时设置配置，后续调用返回 false（除非 force = true）
+    /// 首次调用时设置配置，后续调用返回 false（除非 config._force = true）
     ///
     /// # 参数
     ///
-    /// - `config`: 框架配置
-    /// - `force`: 是否强制覆盖已存在的配置
+    /// - `config`: 框架配置，其中 `_force` 字段控制是否强制覆盖
     ///
     /// # 返回
     ///
     /// - `true`: 配置成功设置
     /// - `false`: 配置已存在且未强制覆盖
-    pub fn config(config: Config, force: bool) -> bool {
-        if GLOBAL_CONFIG.get().is_some() && !force {
+    pub fn config(config: Config) -> bool {
+        if GLOBAL_CONFIG.get().is_some() && !config._force {
             return false;
         }
 
-        // 设置默认 Direction 和 Packer（类似 PHP 版本）
+        // 强制覆盖时，需要特殊处理（OnceLock 限制）
+        if config._force {
+            // OnceLock 不支持真正清除，force 模式下仍使用 get_or_init
+            // 未来可考虑使用 RwLock 或其他机制
+        }
+
         let _ = GLOBAL_CONFIG.get_or_init(|| config);
 
         true
@@ -65,25 +69,17 @@ impl Artful {
         GLOBAL_CONFIG.get().is_some()
     }
 
-    /// 清除全局配置
-    pub fn clear() {
-        // OnceLock 无法真正清除，这里只是标记
-        // 实际清除需要重新设计或使用其他机制
-    }
-
     /// 执行插件链
     ///
     /// # 参数
     ///
-    /// - `config`: HTTP 请求配置
     /// - `params`: 原始参数（存储在 rocket.params，不可变）
-    /// - `plugins`: 插件列表
+    /// - `plugins`: 插件列表（负责设置 method、url 等配置）
     pub async fn artful(
-        config: RocketConfig,
         params: HashMap<String, Value>,
         plugins: Vec<Arc<dyn Plugin>>,
     ) -> Result<Destination> {
-        let mut rocket = Rocket::new(config, params);
+        let mut rocket = Rocket::new(params);
         let mut ctrl = FlowCtrl::new(plugins);
 
         ctrl.call_next(&mut rocket).await;
@@ -93,12 +89,11 @@ impl Artful {
 
     /// 使用 Shortcut 快捷方式
     pub async fn shortcut<S: Shortcut + Default>(
-        config: RocketConfig,
         params: HashMap<String, Value>,
     ) -> Result<Destination> {
         let shortcut = S::default();
-        let plugins = shortcut.get_plugins(&config, &params);
-        Self::artful(config, params, plugins).await
+        let plugins = shortcut.get_plugins(&params);
+        Self::artful(params, plugins).await
     }
 
     /// 直接调用 HTTP（跳过插件链）

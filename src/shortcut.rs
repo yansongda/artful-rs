@@ -10,19 +10,9 @@ use std::sync::Arc;
 use serde_json::Value;
 
 use crate::plugin::Plugin;
-use crate::rocket::RocketConfig;
 
 /// 快捷方式 trait
 pub trait Shortcut {
     /// 返回插件列表
-    ///
-    /// # 参数
-    ///
-    /// - `config`: HTTP 请求配置
-    /// - `params`: 原始参数
-    fn get_plugins(
-        &self,
-        config: &RocketConfig,
-        params: &HashMap<String, Value>,
-    ) -> Vec<Arc<dyn Plugin>>;
+    fn get_plugins(&self, params: &HashMap<String, Value>) -> Vec<Arc<dyn Plugin>>;
 }

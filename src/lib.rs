@@ -12,7 +12,7 @@
 pub mod direction;
 pub mod error;
 pub mod directions {
-    pub use crate::direction::CollectionDirection;
+    pub use crate::direction::JsonDirection;
 }
 pub mod artful;
 pub mod config;
@@ -27,7 +27,7 @@ pub mod shortcut;
 
 pub use artful::Artful;
 pub use config::{Config, LoggerConfig};
-pub use direction::{Destination, Direction, DirectionKind};
+pub use direction::{Destination, Direction, DirectionKind, JsonDirection};
 pub use error::{ArtfulError, Result};
 pub use flow_ctrl::{FlowCtrl, Next};
 pub use http::get_client;

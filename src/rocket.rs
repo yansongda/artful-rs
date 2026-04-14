@@ -58,7 +58,7 @@ pub struct Rocket {
     /// 业务参数（可修改）
     pub payload: HashMap<String, Value>,
 
-    /// Rocket 配置
+    /// Rocket 配置（可修改）
     pub config: RocketConfig,
 
     /// HTTP 请求对象
@@ -92,15 +92,16 @@ impl Rocket {
     /// 创建 Rocket
     ///
     /// params 存储原始参数，payload 初始为空（由 StartPlugin 初始化）
-    pub fn new(config: RocketConfig, params: HashMap<String, Value>) -> Self {
+    /// config 使用默认值，由插件负责设置 method、url 等
+    pub fn new(params: HashMap<String, Value>) -> Self {
         Self {
             params,
             payload: HashMap::new(),
-            config,
+            config: RocketConfig::default(),
             radar: None,
             destination_origin: None,
             destination: None,
-            direction: DirectionKind::CollectionDirection,
+            direction: DirectionKind::JsonDirection,
             packer: Arc::new(JsonPacker),
         }
     }

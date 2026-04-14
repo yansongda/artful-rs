@@ -1,5 +1,4 @@
 use artful::Rocket;
-use artful::RocketConfig;
 use artful::flow_ctrl::FlowCtrl;
 use artful::plugin::Plugin;
 use async_trait::async_trait;
@@ -32,8 +31,7 @@ async fn test_flow_ctrl_basic() {
     ];
 
     let mut ctrl = FlowCtrl::new(plugins);
-    let config = RocketConfig::default();
-    let mut rocket = Rocket::new(config, HashMap::new());
+    let mut rocket = Rocket::new(HashMap::new());
 
     ctrl.call_next(&mut rocket).await;
 
@@ -50,7 +48,6 @@ async fn test_flow_ctrl_cease() {
             rocket
                 .payload
                 .insert("ceased".to_string(), serde_json::json!(true));
-            // 不调用 next，停止流程
         }
     }
 
@@ -62,8 +59,7 @@ async fn test_flow_ctrl_cease() {
     ];
 
     let mut ctrl = FlowCtrl::new(plugins);
-    let config = RocketConfig::default();
-    let mut rocket = Rocket::new(config, HashMap::new());
+    let mut rocket = Rocket::new(HashMap::new());
 
     ctrl.call_next(&mut rocket).await;
 

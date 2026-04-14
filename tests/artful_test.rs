@@ -2,12 +2,28 @@ use artful::FlowCtrl;
 use artful::Rocket;
 use artful::direction::{Destination, DirectionKind};
 use artful::plugins::{AddRadarPlugin, ParserPlugin, StartPlugin};
-use artful::{Artful, RocketConfig};
+use artful::{Artful, Plugin, flow_ctrl::Next};
+use async_trait::async_trait;
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
+
+/// 设置 HTTP 方法和 URL 的插件
+struct MethodUrlPlugin {
+    method: reqwest::Method,
+    url: String,
+}
+
+#[async_trait]
+impl Plugin for MethodUrlPlugin {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+        rocket.config.method = self.method.clone();
+        rocket.config.url = self.url.clone();
+        next.call(rocket).await;
+    }
+}
 
 #[tokio::test]
 async fn test_artful_basic() {
@@ -19,22 +35,19 @@ async fn test_artful_basic() {
         .mount(&mock_server)
         .await;
 
-    let config = RocketConfig {
-        url: mock_server.uri() + "/test",
-        ..Default::default()
-    };
-
-    let plugins: Vec<Arc<dyn artful::Plugin>> = vec![
+    let plugins: Vec<Arc<dyn Plugin>> = vec![
         Arc::new(StartPlugin),
+        Arc::new(MethodUrlPlugin {
+            method: reqwest::Method::POST,
+            url: mock_server.uri() + "/test",
+        }),
         Arc::new(AddRadarPlugin),
         Arc::new(ParserPlugin),
     ];
 
-    let result = Artful::artful(config, HashMap::new(), plugins)
-        .await
-        .unwrap();
+    let result = Artful::artful(HashMap::new(), plugins).await.unwrap();
 
-    assert!(matches!(result, Destination::Collection(_)));
+    assert!(matches!(result, Destination::Json(_)));
 }
 
 #[tokio::test]
@@ -47,17 +60,12 @@ async fn test_artful_with_response_direction() {
         .mount(&mock_server)
         .await;
 
-    let config = RocketConfig {
-        method: reqwest::Method::GET,
-        url: mock_server.uri() + "/raw",
-        ..Default::default()
-    };
-
-    let mut rocket = Rocket::new(config, HashMap::new());
+    let mut rocket = Rocket::new(HashMap::new());
+    rocket.config.method = reqwest::Method::GET;
+    rocket.config.url = mock_server.uri() + "/raw";
     rocket.direction = DirectionKind::ResponseDirection;
 
-    let plugins: Vec<Arc<dyn artful::Plugin>> =
-        vec![Arc::new(AddRadarPlugin), Arc::new(ParserPlugin)];
+    let plugins: Vec<Arc<dyn Plugin>> = vec![Arc::new(AddRadarPlugin), Arc::new(ParserPlugin)];
 
     let mut ctrl = FlowCtrl::new(plugins);
     ctrl.call_next(&mut rocket).await;
