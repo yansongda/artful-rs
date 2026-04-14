@@ -6,6 +6,17 @@ pub trait Direction: Send + Sync + std::fmt::Debug {
 }
 
 #[derive(Debug, Clone)]
+pub struct CollectionDirection;
+
+#[async_trait::async_trait]
+impl Direction for CollectionDirection {
+    async fn parse(&self, rocket: &mut crate::Rocket) -> crate::Result<Destination> {
+        let value = serde_json::to_value(&rocket.payload)?;
+        Ok(Destination::Collection(value))
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum DirectionKind {
     CollectionDirection,
     ResponseDirection,
