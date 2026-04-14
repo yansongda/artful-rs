@@ -1,4 +1,4 @@
-# Artful-Rs
+# Artisan
 
 > Api RequesT Framework U Like - 你喜欢的 Rust API 请求框架
 
@@ -16,17 +16,17 @@
 
 ```toml
 [dependencies]
-artful = "~0.1"
+artisan = "~0.9"
 ```
 
-> 使用 `~` 版本符号确保依赖兼容性，`~0.1` 表示兼容 0.1.x 的所有版本。
+> 使用 `~` 版本符号确保依赖兼容性，`~0.9` 表示兼容 0.9.x 的所有版本。
 
 ## 快速开始
 
 ### 初始化框架
 
 ```rust
-use artful::{Artful, Config};
+use artisan::{Artful, Config};
 
 // 初始化框架配置（可选）
 // 首次调用成功返回 true，后续调用返回 false（OnceLock 不支持覆盖）
@@ -36,8 +36,8 @@ Artful::config(Config::default());
 ### 基础使用
 
 ```rust
-use artful::{Artful, Plugin, Rocket, flow_ctrl::Next};
-use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use artisan::{Artful, Plugin, Rocket, flow_ctrl::Next};
+use artisan::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::collections::HashMap;
@@ -50,7 +50,7 @@ struct MethodUrlPlugin {
 
 #[async_trait]
 impl Plugin for MethodUrlPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
         rocket.config.method = self.method.clone();
         rocket.config.url = self.url.clone();
         next.call(rocket).await
@@ -58,13 +58,13 @@ impl Plugin for MethodUrlPlugin {
 }
 
 #[tokio::main]
-async fn main() -> artful::Result<()> {
+async fn main() -> artisan::Result<()> {
     let params = HashMap::from([
         ("order_id", json!("123")),
         ("amount", json!(100)),
     ]);
 
-    let plugins: Vec<Arc<dyn artful::Plugin>> = vec![
+    let plugins: Vec<Arc<dyn artisan::Plugin>> = vec![
         Arc::new(StartPlugin),
         Arc::new(MethodUrlPlugin {
             method: reqwest::Method::POST,
@@ -77,7 +77,7 @@ async fn main() -> artful::Result<()> {
 
     let result = Artful::artful(params, plugins).await?;
     
-    if let artful::Destination::Json(json) = result {
+    if let artisan::Destination::Json(json) = result {
         println!("Response: {}", json);
     }
 
@@ -88,8 +88,8 @@ async fn main() -> artful::Result<()> {
 ### 使用 Shortcut 快捷方式
 
 ```rust
-use artful::{Artful, Shortcut, Plugin};
-use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use artisan::{Artful, Shortcut, Plugin};
+use artisan::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
 use std::sync::Arc;
 use std::collections::HashMap;
 
@@ -122,7 +122,7 @@ let result = Artful::shortcut::<MyApiShortcut>(HashMap::new()).await?;
 ### 自定义插件
 
 ```rust
-use artful::{Plugin, Rocket, flow_ctrl::Next};
+use artisan::{Plugin, Rocket, flow_ctrl::Next};
 use async_trait::async_trait;
 
 pub struct SignaturePlugin {
@@ -131,7 +131,7 @@ pub struct SignaturePlugin {
 
 #[async_trait]
 impl Plugin for SignaturePlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
         rocket.config.headers.insert(
             "X-Signature".to_string(),
             sign(&self.api_key, &rocket.payload),

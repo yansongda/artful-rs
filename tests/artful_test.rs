@@ -1,8 +1,8 @@
-use artful::FlowCtrl;
-use artful::Rocket;
-use artful::direction::{Destination, DirectionKind};
-use artful::plugins::{AddRadarPlugin, ParserPlugin, StartPlugin};
-use artful::{Artful, Plugin, flow_ctrl::Next};
+use artisan::FlowCtrl;
+use artisan::Rocket;
+use artisan::direction::{Destination, DirectionKind};
+use artisan::plugins::{AddRadarPlugin, ParserPlugin, StartPlugin};
+use artisan::{Artful, Plugin, flow_ctrl::Next};
 use async_trait::async_trait;
 use serde_json::json;
 use std::collections::HashMap;
@@ -18,7 +18,7 @@ struct MethodUrlPlugin {
 
 #[async_trait]
 impl Plugin for MethodUrlPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
         rocket.config.method = self.method.clone();
         rocket.config.url = self.url.clone();
         next.call(rocket).await
@@ -26,7 +26,7 @@ impl Plugin for MethodUrlPlugin {
 }
 
 #[tokio::test]
-async fn test_artful_basic() {
+async fn test_artisan_basic() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("POST"))
@@ -51,7 +51,7 @@ async fn test_artful_basic() {
 }
 
 #[tokio::test]
-async fn test_artful_with_response_direction() {
+async fn test_artisan_with_response_direction() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))

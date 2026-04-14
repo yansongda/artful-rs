@@ -1,4 +1,4 @@
-use artful::{HttpOptions, Rocket, RocketConfig};
+use artisan::{HttpOptions, Rocket, RocketConfig};
 use serde_json::json;
 use std::collections::HashMap;
 

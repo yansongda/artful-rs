@@ -11,7 +11,7 @@
 use std::sync::OnceLock;
 use std::time::Duration;
 
-use crate::artful::Artful;
+use crate::artisan::Artful;
 use crate::rocket::HttpOptions;
 
 const DEFAULT_POOL_IDLE_TIMEOUT: u64 = 90;

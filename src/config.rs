@@ -23,7 +23,7 @@ pub struct Config {
     /// # 示例
     ///
     /// ```rust
-    /// use artful::Config;
+    /// use artisan::Config;
     /// use serde_json::json;
     /// use std::collections::HashMap;
     ///

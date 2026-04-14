@@ -1,5 +1,5 @@
-use artful::packer::Packer;
-use artful::packers::JsonPacker;
+use artisan::packer::Packer;
+use artisan::packers::JsonPacker;
 use serde_json::json;
 use std::collections::HashMap;
 

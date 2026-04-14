@@ -1,6 +1,6 @@
 //! 配置初始化示例
 
-use artful::{Artful, Config, HttpOptions};
+use artisan::{Artful, Config, HttpOptions};
 use serde_json::json;
 use std::collections::HashMap;
 
