@@ -14,10 +14,12 @@ pub enum DirectionKind {
     Custom(Arc<dyn Direction>),
 }
 
+#[derive(Default)]
 pub enum Destination {
     Collection(serde_json::Value),
     Response(reqwest::Response),
     Rocket(Box<crate::Rocket>),
+    #[default]
     None,
 }
 
@@ -29,11 +31,5 @@ impl std::fmt::Debug for Destination {
             Destination::Rocket(r) => f.debug_tuple("Rocket").field(r).finish(),
             Destination::None => write!(f, "None"),
         }
-    }
-}
-
-impl Default for Destination {
-    fn default() -> Self {
-        Destination::None
     }
 }
