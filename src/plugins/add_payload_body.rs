@@ -15,6 +15,7 @@ use crate::flow_ctrl::Next;
 use crate::plugin::Plugin;
 
 /// 添加 payload body 插件
+#[derive(Clone, Copy, Debug, Default)]
 pub struct AddPayloadBodyPlugin;
 
 #[async_trait]

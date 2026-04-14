@@ -20,6 +20,7 @@ use crate::http::get_client;
 use crate::plugin::Plugin;
 
 /// 解析响应插件
+#[derive(Clone, Copy, Debug, Default)]
 pub struct ParserPlugin;
 
 #[async_trait]
