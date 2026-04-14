@@ -85,3 +85,160 @@ fn test_flow_ctrl_has_next() {
     let ctrl = FlowCtrl::new(plugins);
     assert!(ctrl.has_next());
 }
+
+#[test]
+fn test_flow_ctrl_no_next() {
+    let plugins: Vec<Arc<dyn Plugin>> = vec![];
+    let ctrl = FlowCtrl::new(plugins);
+    assert!(!ctrl.has_next());
+}
+
+#[test]
+fn test_flow_ctrl_skip_rest_direct() {
+    let plugins: Vec<Arc<dyn Plugin>> = vec![
+        Arc::new(TestPlugin { name: "p1".to_string() }),
+        Arc::new(TestPlugin { name: "p2".to_string() }),
+        Arc::new(TestPlugin { name: "p3".to_string() }),
+    ];
+
+    let mut ctrl = FlowCtrl::new(plugins);
+    assert!(ctrl.has_next());
+    assert!(!ctrl.is_ceased());
+
+    ctrl.skip_rest();
+
+    assert!(!ctrl.has_next());
+    assert!(ctrl.is_ceased());
+}
+
+#[test]
+fn test_flow_ctrl_cease_direct() {
+    let plugins: Vec<Arc<dyn Plugin>> = vec![
+        Arc::new(TestPlugin { name: "p1".to_string() }),
+        Arc::new(TestPlugin { name: "p2".to_string() }),
+    ];
+
+    let mut ctrl = FlowCtrl::new(plugins);
+    assert!(ctrl.has_next());
+    assert!(!ctrl.is_ceased());
+
+    ctrl.cease();
+
+    assert!(!ctrl.has_next());
+    assert!(ctrl.is_ceased());
+}
+
+#[test]
+fn test_flow_ctrl_is_ceased() {
+    let plugins: Vec<Arc<dyn Plugin>> = vec![Arc::new(TestPlugin { name: "p1".to_string() })];
+    let ctrl = FlowCtrl::new(plugins.clone());
+    assert!(!ctrl.is_ceased());
+
+    let mut ceased_ctrl = FlowCtrl::new(plugins);
+    ceased_ctrl.cease();
+    assert!(ceased_ctrl.is_ceased());
+}
+
+#[test]
+fn test_flow_ctrl_debug() {
+    let plugins: Vec<Arc<dyn Plugin>> = vec![
+        Arc::new(TestPlugin { name: "p1".to_string() }),
+        Arc::new(TestPlugin { name: "p2".to_string() }),
+    ];
+
+    let ctrl = FlowCtrl::new(plugins);
+    let debug_str = format!("{:?}", ctrl);
+    
+    assert!(debug_str.contains("cursor"));
+    assert!(debug_str.contains("plugins_count"));
+    assert!(debug_str.contains("is_ceased"));
+}
+
+#[tokio::test]
+async fn test_flow_ctrl_empty_plugins() {
+    let plugins: Vec<Arc<dyn Plugin>> = vec![];
+    let mut ctrl = FlowCtrl::new(plugins);
+    let mut rocket = Rocket::new(HashMap::new());
+
+    let result = ctrl.call_next(&mut rocket).await;
+    assert!(result.is_ok());
+    assert!(rocket.payload.is_empty());
+}
+
+#[tokio::test]
+async fn test_flow_ctrl_call_next_after_cease() {
+    struct MarkPlugin {
+        name: String,
+    }
+
+    #[async_trait]
+    impl Plugin for MarkPlugin {
+        async fn assembly(
+            &self,
+            rocket: &mut Rocket,
+            next: artisan::flow_ctrl::Next<'_>,
+        ) -> artisan::Result<()> {
+            rocket.payload.insert(self.name.clone(), serde_json::json!(true));
+            next.call(rocket).await
+        }
+    }
+
+    let plugins: Vec<Arc<dyn Plugin>> = vec![
+        Arc::new(MarkPlugin { name: "first".to_string() }),
+        Arc::new(MarkPlugin { name: "second".to_string() }),
+    ];
+
+    let mut ctrl = FlowCtrl::new(plugins);
+    let mut rocket = Rocket::new(HashMap::new());
+
+    // 先手动调用 cease
+    ctrl.cease();
+
+    // 调用 call_next 应该立即返回 Ok(())
+    let result = ctrl.call_next(&mut rocket).await;
+    assert!(result.is_ok());
+    assert!(rocket.payload.is_empty());
+}
+
+#[test]
+fn test_flow_ctrl_cease_clears_has_next() {
+    let plugins: Vec<Arc<dyn Plugin>> = vec![
+        Arc::new(TestPlugin { name: "p1".to_string() }),
+        Arc::new(TestPlugin { name: "p2".to_string() }),
+        Arc::new(TestPlugin { name: "p3".to_string() }),
+    ];
+
+    let mut ctrl = FlowCtrl::new(plugins);
+    
+    // 初始状态
+    assert!(ctrl.has_next());
+    
+    // 执行 cease
+    ctrl.cease();
+    
+    // cease 后 has_next 应为 false（因为 cursor 被设置为 plugins.len())
+    assert!(!ctrl.has_next());
+}
+
+#[test]
+fn test_flow_ctrl_skip_rest_vs_cease() {
+    let plugins1: Vec<Arc<dyn Plugin>> = vec![
+        Arc::new(TestPlugin { name: "p1".to_string() }),
+        Arc::new(TestPlugin { name: "p2".to_string() }),
+    ];
+
+    let plugins2: Vec<Arc<dyn Plugin>> = vec![
+        Arc::new(TestPlugin { name: "p1".to_string() }),
+        Arc::new(TestPlugin { name: "p2".to_string() }),
+    ];
+
+    let mut ctrl_skip = FlowCtrl::new(plugins1);
+    ctrl_skip.skip_rest();
+    assert!(!ctrl_skip.has_next());
+    assert!(ctrl_skip.is_ceased());
+
+    let mut ctrl_cease = FlowCtrl::new(plugins2);
+    ctrl_cease.cease();
+    assert!(!ctrl_cease.has_next());
+    assert!(ctrl_cease.is_ceased());
+}
