@@ -28,6 +28,7 @@ use crate::shortcut::Shortcut;
 static GLOBAL_CONFIG: OnceLock<Config> = OnceLock::new();
 
 /// Artful 主类 - 框架入口
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Artful;
 
 impl Artful {
@@ -76,7 +77,7 @@ impl Artful {
     }
 
     /// 使用 Shortcut 快捷方式
-    pub async fn shortcut<S: Shortcut + Default>(
+    pub async fn shortcut<S: Shortcut>(
         params: HashMap<String, Value>,
     ) -> Result<Destination> {
         let shortcut = S::default();

@@ -12,7 +12,7 @@ use serde_json::Value;
 use crate::plugin::Plugin;
 
 /// 快捷方式 trait
-pub trait Shortcut {
+pub trait Shortcut: Default {
     /// 返回插件列表
     fn get_plugins(&self, params: &HashMap<String, Value>) -> Vec<Arc<dyn Plugin>>;
 }

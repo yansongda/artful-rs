@@ -45,7 +45,7 @@ impl Plugin for AddRadarPlugin {
 
         let request = request_builder
             .build()
-            .map_err(|e| crate::error::ArtfulError::InvalidUrl(e.to_string()))?;
+            .map_err(|e| crate::error::ArtfulError::InvalidUrl { source: e })?;
         rocket.radar = Some(request);
 
         next.call(rocket).await

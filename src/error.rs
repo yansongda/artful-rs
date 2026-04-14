@@ -20,19 +20,28 @@ pub enum ArtfulError {
     #[error("网络错误: {0}")]
     NetworkError(String),
 
-    #[error("无效的 URL: {0}")]
-    InvalidUrl(String),
+    #[error("无效的 URL: {source}")]
+    InvalidUrl {
+        #[source]
+        source: reqwest::Error,
+    },
 
     #[error("JSON 序列化失败: {0}")]
     JsonSerializeError(#[from] serde_json::Error),
 
     #[error("JSON 反序列化失败: {message}")]
-    JsonDeserializeError { message: String },
+    JsonDeserializeError {
+        message: String,
+        #[source]
+        source: Option<serde_json::Error>,
+    },
 
     #[error("插件执行错误: {plugin_name} - {message}")]
     PluginExecutionError {
         plugin_name: String,
         message: String,
+        #[source]
+        source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
     #[error("缺少必要参数: {0}")]

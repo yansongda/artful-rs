@@ -28,6 +28,16 @@ pub struct FlowCtrl {
     is_ceased: bool,
 }
 
+impl std::fmt::Debug for FlowCtrl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FlowCtrl")
+            .field("cursor", &self.cursor)
+            .field("plugins_count", &self.plugins.len())
+            .field("is_ceased", &self.is_ceased)
+            .finish()
+    }
+}
+
 impl FlowCtrl {
     /// 创建新的流向控制器
     pub fn new(plugins: Vec<Arc<dyn Plugin>>) -> Self {
