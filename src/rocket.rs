@@ -56,7 +56,7 @@ pub struct HttpOptions {
     /// 连接池空闲连接超时（秒），默认 90
     pub pool_idle_timeout: Option<u64>,
 
-    /// 每个 host 最大空闲连接数，默认无限制
+    /// 每个 host 最大空闲连接数，默认 20
     pub pool_max_idle_per_host: Option<usize>,
 }
 
