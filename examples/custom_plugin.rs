@@ -15,10 +15,10 @@ struct MethodUrlPlugin {
 
 #[async_trait]
 impl Plugin for MethodUrlPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
         rocket.config.method = self.method.clone();
         rocket.config.url = self.url.clone();
-        next.call(rocket).await;
+        next.call(rocket).await
     }
 }
 
@@ -29,22 +29,16 @@ struct SignaturePlugin {
 
 #[async_trait]
 impl Plugin for SignaturePlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
-        // 生成简单签名（实际使用时可用更复杂的签名算法）
-        let signature = format!("sign-{}", self.api_key);
-        
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
         rocket.config.headers.insert(
             "X-Signature".to_string(),
-            signature,
+            format!("sign-{}", self.api_key),
         );
-        
-        // 也可以添加认证头
         rocket.config.headers.insert(
             "Authorization".to_string(),
             format!("Bearer {}", self.api_key),
         );
-        
-        next.call(rocket).await;
+        next.call(rocket).await
     }
 }
 

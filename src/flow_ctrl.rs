@@ -39,16 +39,16 @@ impl FlowCtrl {
     }
 
     /// 调用下一层插件（洋葱穿透）
-    pub async fn call_next(&mut self, rocket: &mut Rocket) {
+    pub async fn call_next(&mut self, rocket: &mut Rocket) -> crate::Result<()> {
         if self.is_ceased || !self.has_next() {
-            return;
+            return Ok(());
         }
 
         let plugin = self.plugins[self.cursor].clone();
         self.cursor += 1;
 
         let next = Next { ctrl: self };
-        plugin.assembly(rocket, next).await;
+        plugin.assembly(rocket, next).await
     }
 
     /// 检查是否还有下一层
@@ -81,7 +81,7 @@ pub struct Next<'a> {
 
 impl<'a> Next<'a> {
     /// 调用下一个插件
-    pub async fn call(self, rocket: &mut Rocket) {
-        self.ctrl.call_next(rocket).await;
+    pub async fn call(self, rocket: &mut Rocket) -> crate::Result<()> {
+        self.ctrl.call_next(rocket).await
     }
 }

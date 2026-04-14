@@ -44,6 +44,12 @@ pub enum ArtfulError {
     #[error("响应解析失败: {0}")]
     DirectionParseError(String),
 
+    #[error("缺少 HTTP Request")]
+    MissingRequest,
+
+    #[error("缺少 HTTP Response")]
+    MissingResponse,
+
     #[error("{0}")]
     Other(String),
 }

@@ -9,7 +9,6 @@ fn test_rocket_config_default() {
     assert_eq!(config.url, "");
     assert!(config.headers.is_empty());
     assert!(config.body.is_none());
-    assert!(!config.return_rocket);
 }
 
 #[test]

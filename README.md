@@ -50,10 +50,10 @@ struct MethodUrlPlugin {
 
 #[async_trait]
 impl Plugin for MethodUrlPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
         rocket.config.method = self.method.clone();
         rocket.config.url = self.url.clone();
-        next.call(rocket).await;
+        next.call(rocket).await
     }
 }
 
@@ -131,16 +131,18 @@ pub struct SignaturePlugin {
 
 #[async_trait]
 impl Plugin for SignaturePlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
         rocket.config.headers.insert(
             "X-Signature".to_string(),
             sign(&self.api_key, &rocket.payload),
         );
         
-        next.call(rocket).await;
+        next.call(rocket).await
     }
 }
 ```
+
+**错误处理**: 插件返回 `Result<()>`，任一插件失败会终止整个链并传播错误。
 
 ## 核心概念
 
@@ -173,7 +175,6 @@ pub struct RocketConfig {
     pub headers: HashMap<String, String>,
     pub body: Option<String>,
     pub http: HttpOptions,
-    pub return_rocket: bool,
     pub direction: DirectionKind,     // 响应解析策略
 }
 ```
@@ -185,7 +186,7 @@ pub struct RocketConfig {
 ```rust
 #[async_trait]
 pub trait Plugin: Send + Sync + 'static {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>);
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> Result<()>;
 }
 ```
 
@@ -202,7 +203,6 @@ pub enum DirectionKind {
     JsonDirection,             // 解析为 JSON（默认）
     ResponseDirection,         // 返回原始 Response
     NoHttpRequestDirection,    // 不发起 HTTP 请求
-    OriginResponseDirection,   // 返回 Rocket（调试用）
     Custom(Arc<dyn Direction>), // 自定义解析器
 }
 ```

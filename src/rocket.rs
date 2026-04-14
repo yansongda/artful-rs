@@ -29,7 +29,6 @@ pub struct RocketConfig {
     pub headers: HashMap<String, String>,
     pub body: Option<String>,
     pub http: HttpOptions,
-    pub return_rocket: bool,
     pub direction: DirectionKind,
 }
 
@@ -41,7 +40,6 @@ impl Default for RocketConfig {
             headers: HashMap::new(),
             body: None,
             http: HttpOptions::default(),
-            return_rocket: false,
             direction: DirectionKind::JsonDirection,
         }
     }

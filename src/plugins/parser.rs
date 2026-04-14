@@ -13,6 +13,7 @@ use async_trait::async_trait;
 
 use crate::Rocket;
 use crate::direction::{Destination, Direction, DirectionKind, JsonDirection};
+use crate::error::ArtfulError;
 use crate::flow_ctrl::Next;
 use crate::http::get_client;
 use crate::plugin::Plugin;
@@ -22,51 +23,44 @@ pub struct ParserPlugin;
 
 #[async_trait]
 impl Plugin for ParserPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> crate::Result<()> {
+        // NoHttpRequestDirection - 不发起请求，直接调用下一层
         if let DirectionKind::NoHttpRequestDirection = rocket.config.direction {
-            next.call(rocket).await;
-            return;
+            return next.call(rocket).await;
         }
 
-        if rocket.radar.is_none() {
-            next.call(rocket).await;
-            return;
-        }
+        // 检查 radar 是否存在
+        let request = rocket.radar.take()
+            .ok_or(ArtfulError::MissingRequest)?;
 
+        // 发送 HTTP 请求
         let client = get_client();
-        let request = rocket.radar.take().unwrap();
+        let response = client.execute(request).await
+            .map_err(ArtfulError::RequestFailed)?;
+        
+        rocket.destination_origin = Some(response);
 
-        if let Ok(response) = client.execute(request).await {
-            rocket.destination_origin = Some(response);
-
-            let direction_kind = rocket.config.direction.clone();
-
-            match direction_kind {
-                DirectionKind::JsonDirection => {
-                    let direction = JsonDirection;
-                    if let Ok(dest) = direction.parse(rocket).await {
-                        rocket.destination = Some(dest);
-                    }
-                }
-                DirectionKind::ResponseDirection => {
-                    if let Some(resp) = rocket.destination_origin.take() {
-                        rocket.destination = Some(Destination::Response(resp));
-                    }
-                }
-                DirectionKind::OriginResponseDirection => {
-                    if rocket.config.return_rocket {
-                        // Rocket doesn't implement Clone yet
-                    }
-                }
-                DirectionKind::Custom(d) => {
-                    if let Ok(dest) = d.parse(rocket).await {
-                        rocket.destination = Some(dest);
-                    }
-                }
-                _ => {}
+        // 解析响应
+        let direction_kind = rocket.config.direction.clone();
+        let destination = match direction_kind {
+            DirectionKind::JsonDirection => {
+                JsonDirection.parse(rocket).await?
             }
-        }
+            DirectionKind::ResponseDirection => {
+                rocket.destination_origin.take()
+                    .map(Destination::Response)
+                    .ok_or(ArtfulError::MissingResponse)?
+            }
+            DirectionKind::Custom(direction) => {
+                direction.parse(rocket).await?
+            }
+            DirectionKind::NoHttpRequestDirection => {
+                Destination::None
+            }
+        };
 
-        next.call(rocket).await;
+        rocket.destination = Some(destination);
+
+        next.call(rocket).await
     }
 }

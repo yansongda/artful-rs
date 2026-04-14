@@ -11,11 +11,11 @@ struct TestPlugin {
 
 #[async_trait]
 impl Plugin for TestPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: artful::flow_ctrl::Next<'_>) {
+    async fn assembly(&self, rocket: &mut Rocket, next: artful::flow_ctrl::Next<'_>) -> artful::Result<()> {
         rocket
             .payload
             .insert("visited".to_string(), serde_json::json!(self.name.clone()));
-        next.call(rocket).await;
+        next.call(rocket).await
     }
 }
 
@@ -33,7 +33,7 @@ async fn test_flow_ctrl_basic() {
     let mut ctrl = FlowCtrl::new(plugins);
     let mut rocket = Rocket::new(HashMap::new());
 
-    ctrl.call_next(&mut rocket).await;
+    ctrl.call_next(&mut rocket).await.unwrap();
 
     assert!(rocket.payload.contains_key("visited"));
 }
@@ -44,10 +44,11 @@ async fn test_flow_ctrl_cease() {
 
     #[async_trait]
     impl Plugin for CeasePlugin {
-        async fn assembly(&self, rocket: &mut Rocket, _next: artful::flow_ctrl::Next<'_>) {
+        async fn assembly(&self, rocket: &mut Rocket, _next: artful::flow_ctrl::Next<'_>) -> artful::Result<()> {
             rocket
                 .payload
                 .insert("ceased".to_string(), serde_json::json!(true));
+            Ok(())
         }
     }
 
@@ -61,7 +62,7 @@ async fn test_flow_ctrl_cease() {
     let mut ctrl = FlowCtrl::new(plugins);
     let mut rocket = Rocket::new(HashMap::new());
 
-    ctrl.call_next(&mut rocket).await;
+    ctrl.call_next(&mut rocket).await.unwrap();
 
     assert!(rocket.payload.contains_key("ceased"));
     assert!(!rocket.payload.contains_key("visited"));
