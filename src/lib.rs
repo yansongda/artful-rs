@@ -1,6 +1,6 @@
-//! Artful-Rs - Api RequesT Framework U Like
+//! Artisan - Api RequesT Framework U Like
 //!
-//! 基于洋葱模型的 Rust HTTP 客户端框架。
+//! 基于洋葱模型的 Rust HTTP 客端框架。
 //!
 //! # 核心概念
 //!
@@ -13,7 +13,7 @@ pub mod direction;
 pub mod directions;
 pub mod error;
 pub use directions::JsonDirection;
-pub mod artful;
+pub mod artisan;
 pub mod config;
 pub mod flow_ctrl;
 pub mod http;
@@ -24,7 +24,7 @@ pub mod plugins;
 pub mod rocket;
 pub mod shortcut;
 
-pub use artful::Artful;
+pub use artisan::Artful;
 pub use config::{Config, LoggerConfig};
 pub use direction::{Destination, Direction, DirectionKind};
 pub use error::{ArtfulError, Result};

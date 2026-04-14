@@ -1,4 +1,4 @@
-use artful::direction::{Destination, DirectionKind};
+use artisan::direction::{Destination, DirectionKind};
 
 #[test]
 fn test_direction_kind_default() {

@@ -1,5 +1,5 @@
-use artful::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
-use artful::{Plugin, Shortcut};
+use artisan::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
+use artisan::{Plugin, Shortcut};
 use std::collections::HashMap;
 use std::sync::Arc;
 

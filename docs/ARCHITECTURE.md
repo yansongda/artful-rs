@@ -163,7 +163,7 @@ pub struct LoggerConfig {
 **使用示例**：
 
 ```rust
-use artful::{Artful, Config, HttpOptions};
+use artisan::{Artful, Config, HttpOptions};
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -680,7 +680,7 @@ impl Plugin for ParserPlugin {
 ### 5.1 初始化框架
 
 ```rust
-use artful::{Artful, Config};
+use artisan::{Artful, Config};
 
 // 初始化框架配置（可选）
 // config._force = true 时强制覆盖已存在的配置
@@ -690,8 +690,8 @@ Artful::config(Config::default());
 ### 5.2 基础使用
 
 ```rust
-use artful::{Artful, Plugin, Rocket, flow_ctrl::Next};
-use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use artisan::{Artful, Plugin, Rocket, flow_ctrl::Next};
+use artisan::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::collections::HashMap;
@@ -704,7 +704,7 @@ struct MethodUrlPlugin {
 
 #[async_trait]
 impl Plugin for MethodUrlPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
         rocket.config.method = self.method.clone();
         rocket.config.url = self.url.clone();
         next.call(rocket).await
@@ -712,13 +712,13 @@ impl Plugin for MethodUrlPlugin {
 }
 
 #[tokio::main]
-async fn main() -> artful::Result<()> {
+async fn main() -> artisan::Result<()> {
     let params = HashMap::from([
         ("order_id", json!("123")),
         ("amount", json!(100)),
     ]);
 
-    let plugins: Vec<Arc<dyn artful::Plugin>> = vec![
+    let plugins: Vec<Arc<dyn artisan::Plugin>> = vec![
         Arc::new(StartPlugin),
         Arc::new(MethodUrlPlugin {
             method: reqwest::Method::POST,
@@ -731,7 +731,7 @@ async fn main() -> artful::Result<()> {
 
     let result = Artful::artful(params, plugins).await?;
     
-    if let artful::Destination::Json(json) = result {
+    if let artisan::Destination::Json(json) = result {
         println!("Response: {}", json);
     }
 
@@ -742,8 +742,8 @@ async fn main() -> artful::Result<()> {
 ### 5.3 使用 Shortcut 快捷方式
 
 ```rust
-use artful::{Artful, Shortcut, Plugin};
-use artful::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use artisan::{Artful, Shortcut, Plugin};
+use artisan::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
 use std::sync::Arc;
 use std::collections::HashMap;
 
@@ -776,7 +776,7 @@ let result = Artful::shortcut::<MyApiShortcut>(HashMap::new()).await?;
 ### 5.4 自定义插件
 
 ```rust
-use artful::{Plugin, Rocket, flow_ctrl::Next};
+use artisan::{Plugin, Rocket, flow_ctrl::Next};
 use async_trait::async_trait;
 
 pub struct SignaturePlugin {
@@ -785,7 +785,7 @@ pub struct SignaturePlugin {
 
 #[async_trait]
 impl Plugin for SignaturePlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
         rocket.config.headers.insert(
             "X-Signature".to_string(),
             sign(&self.api_key, &rocket.payload),
@@ -819,7 +819,7 @@ let result = Artful::artful(params, plugins).await;
 采用 Rust 标准惯例：**Trait 定义放在对应模块顶层**。
 
 ```
-rs-artful/
+artful-rs/
 ├── Cargo.toml
 ├── Cargo.lock
 ├── README.md
@@ -827,7 +827,7 @@ rs-artful/
 ├── src/
 │   ├── lib.rs                  # 框架入口，导出公共 API
 │   │
-│   ├── artful.rs               # Artful 主入口
+│   ├── artisan.rs               # Artful 主入口
 │   ├── rocket.rs               # Rocket + RocketConfig + HttpOptions
 │   ├── flow_ctrl.rs            # FlowCtrl 流向控制 + Next 闭包
 │   ├── config.rs               # Config + LoggerConfig
@@ -863,7 +863,7 @@ rs-artful/
 │   └── direction.rs            # Direction 响应解析策略示例
 │
 ├── tests/
-│   ├── artful_test.rs
+│   ├── artisan_test.rs
 │   ├── direction_test.rs
 │   ├── flow_ctrl_test.rs
 │   ├── integration_test.rs
@@ -882,7 +882,7 @@ rs-artful/
 | 模块 | 说明 | Trait/类型 |
 |------|------|-----------|
 | `src/lib.rs` | 框架入口 | 导出公共 API |
-| `src/artful.rs` | 主入口 | `Artful` struct |
+| `src/artisan.rs` | 主入口 | `Artful` struct |
 | `src/rocket.rs` | 请求载体 + 配置 | `Rocket`, `RocketConfig`, `HttpOptions` |
 | `src/flow_ctrl.rs` | 流向控制器 | `FlowCtrl`, `Next` |
 | `src/config.rs` | 全局配置 | `Config`, `LoggerConfig` |
@@ -901,15 +901,6 @@ rs-artful/
 ## 七、依赖设计
 
 ```toml
-[package]
-name = "artful"
-version = "0.1.0"
-edition = "2024"
-rust-version = "1.85"
-description = "Api RequesT Framework U Like - 你喜欢的 Rust API 请求框架"
-license = "MIT"
-repository = "https://github.com/yansongda/artful-rs"
-
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 async-trait = "0.1"
@@ -926,25 +917,7 @@ wiremock = "0.6"
 
 ---
 
-## 八、设计决策记录
-
-| 决策 | 原因 |
-|------|------|
-| HTTP Client 全局单例 | reqwest Client 连接池 per-instance，Clone 共享连接池，全局单例性能最优 |
-| Config 与 Client 解耦 | Client 配置构建时固定，per-request timeout 通过 RocketConfig.http 设置 |
-| 连接池参数从 Config 读取 | 允许用户自定义 pool_idle_timeout 和 pool_max_idle_per_host，而非硬编码 |
-| RocketConfig struct | 类型安全 + IDE 类型提示，而非 `_` 参数分散在 HashMap |
-| RocketConfig 所有字段可修改 | plugin 动态修改配置（headers、body、url 等），靠约定管理 |
-| 复用 reqwest::Method | 减少重复定义，与 reqwest API 直接兼容 |
-| payload 直接用 HashMap | 简化设计，payload 本身足够灵活，无需额外 Payload struct |
-| 移除 state 字段 | payload 可承载插件间数据共享，无需额外的 state HashMap |
-| API 入口用 RocketConfig | Rust 最佳实践，而非完全模仿 PHP HashMap |
-| 移除 Config._force | OnceLock 不支持清除，force 模式无法真正实现，简化为首次设置成功返回 true |
-| Config derive Default | 减少手写代码，编译器自动生成，符合 Rust 最佳实践 |
-
----
-
-## 九、后续迭代规划
+## 八、后续迭代规划
 
 ### v0.1.0 - MVP
 
@@ -954,7 +927,7 @@ wiremock = "0.6"
 - [x] reqwest HTTP 客户端单例封装
 - [x] JSON Packer
 - [x] Direction 解析策略（JsonDirection, ResponseDirection 等）
-- [x] Artful 主入口（artful, shortcut, raw 方法）
+- [x] Artful 主入口（artisan, shortcut, raw 方法）
 - [x] Shortcut trait
 - [x] 基础测试覆盖（18 tests）
 - [x] README 文档
@@ -967,15 +940,15 @@ wiremock = "0.6"
 
 ### v0.3.0 - 生态
 
-- [ ] 支付宝支付插件包 `artful-alipay`
-- [ ] 微信支付插件包 `artful-wechat`
+- [ ] 支付宝支付插件包 `artisan-alipay`
+- [ ] 微信支付插件包 `artisan-wechat`
 - [ ] XML Packer 支持（可选）
 
 ---
 
 ## 十、参考资源
 
-- [yansongda/artful](https://github.com/yansongda/artful) - PHP 版本框架
+- [yansongda/artisan](https://github.com/yansongda/artisan) - PHP 版本框架
 - [salvo-rs/salvo](https://github.com/salvo-rs/salvo) - Rust Web 框架（洋葱模型参考）
 - [reqwest](https://github.com/seanmonstar/reqwest) - HTTP 客户端（连接池设计参考）
 - [tower](https://github.com/tower-rs/tower) - Rust Service 抽象（可选参考）

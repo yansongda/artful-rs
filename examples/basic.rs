@@ -1,7 +1,7 @@
 //! 基础使用示例
 
-use artful::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
-use artful::{Artful, Plugin, Rocket, flow_ctrl::Next};
+use artisan::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
+use artisan::{Artful, Plugin, Rocket, flow_ctrl::Next};
 use async_trait::async_trait;
 use serde_json::json;
 use std::collections::HashMap;
@@ -15,7 +15,7 @@ struct MethodUrlPlugin {
 
 #[async_trait]
 impl Plugin for MethodUrlPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
         rocket.config.method = self.method.clone();
         rocket.config.url = self.url.clone();
         next.call(rocket).await
@@ -23,7 +23,7 @@ impl Plugin for MethodUrlPlugin {
 }
 
 #[tokio::main]
-async fn main() -> artful::Result<()> {
+async fn main() -> artisan::Result<()> {
     let mut params = HashMap::new();
     params.insert("order_id".to_string(), json!("123"));
     params.insert("amount".to_string(), json!(100));
@@ -41,7 +41,7 @@ async fn main() -> artful::Result<()> {
 
     let result = Artful::artful(params, plugins).await?;
 
-    if let artful::Destination::Json(json) = result {
+    if let artisan::Destination::Json(json) = result {
         println!("Response: {}", json);
     }
 
