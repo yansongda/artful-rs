@@ -843,7 +843,10 @@ rs-artful/
 │   │
 │   ├── shortcut.rs             # Shortcut trait
 │   │
-│   ├── direction.rs            # Direction trait + DirectionKind + Destination + JsonDirection
+│   ├── direction.rs            # Direction trait + DirectionKind + Destination
+│   ├── directions/             # 内置 Direction 实现
+│   │   ├── mod.rs              # 导出所有内置 Direction
+│   │   └── json.rs             # JsonDirection
 │   │
 │   ├── packer.rs               # Packer trait
 │   ├── packers/                # 内置 Packer 实现
@@ -886,7 +889,8 @@ rs-artful/
 | `src/plugin.rs` | 插件 trait | `Plugin` trait |
 | `src/plugins/` | 内置插件 | `StartPlugin`, `AddRadarPlugin`, `ParserPlugin`, `AddPayloadBodyPlugin` |
 | `src/shortcut.rs` | 快捷方式 trait | `Shortcut` trait |
-| `src/direction.rs` | 解析策略 | `Direction`, `DirectionKind`, `Destination`, `JsonDirection` |
+| `src/direction.rs` | 解析策略 trait | `Direction`, `DirectionKind`, `Destination` |
+| `src/directions/` | 内置解析器 | `JsonDirection` |
 | `src/packer.rs` | 序列化 trait | `Packer` trait |
 | `src/packers/` | 内置序列化器 | `JsonPacker` |
 | `src/http.rs` | HTTP 客户端 | reqwest 全局单例 |
