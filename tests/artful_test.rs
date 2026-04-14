@@ -18,10 +18,10 @@ struct MethodUrlPlugin {
 
 #[async_trait]
 impl Plugin for MethodUrlPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
         rocket.config.method = self.method.clone();
         rocket.config.url = self.url.clone();
-        next.call(rocket).await;
+        next.call(rocket).await
     }
 }
 
@@ -68,7 +68,7 @@ async fn test_artful_with_response_direction() {
     let plugins: Vec<Arc<dyn Plugin>> = vec![Arc::new(AddRadarPlugin), Arc::new(ParserPlugin)];
 
     let mut ctrl = FlowCtrl::new(plugins);
-    ctrl.call_next(&mut rocket).await;
+    ctrl.call_next(&mut rocket).await.unwrap();
 
     assert!(matches!(rocket.destination, Some(Destination::Response(_))));
 }

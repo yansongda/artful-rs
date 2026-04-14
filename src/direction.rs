@@ -13,7 +13,6 @@
 //! - `JsonDirection` - 解析为 JSON（默认）
 //! - `ResponseDirection` - 返回原始 Response
 //! - `NoHttpRequestDirection` - 不发起 HTTP 请求
-//! - `OriginResponseDirection` - 返回 Rocket（调试用）
 //! - `Custom` - 自定义解析器
 
 use std::sync::Arc;
@@ -30,8 +29,14 @@ pub struct JsonDirection;
 #[async_trait::async_trait]
 impl Direction for JsonDirection {
     async fn parse(&self, rocket: &mut crate::Rocket) -> crate::Result<Destination> {
-        let value = serde_json::to_value(&rocket.payload)?;
-        Ok(Destination::Json(value))
+        if let Some(response) = rocket.destination_origin.take() {
+            let text = response.text().await
+                .map_err(crate::error::ArtfulError::RequestFailed)?;
+            let json: serde_json::Value = serde_json::from_str(&text)?;
+            Ok(Destination::Json(json))
+        } else {
+            Err(crate::error::ArtfulError::MissingResponse)
+        }
     }
 }
 
@@ -40,7 +45,6 @@ pub enum DirectionKind {
     JsonDirection,
     ResponseDirection,
     NoHttpRequestDirection,
-    OriginResponseDirection,
     Custom(Arc<dyn Direction>),
 }
 
@@ -48,7 +52,6 @@ pub enum DirectionKind {
 pub enum Destination {
     Json(serde_json::Value),
     Response(reqwest::Response),
-    Rocket(Box<crate::Rocket>),
     #[default]
     None,
 }
@@ -61,7 +64,6 @@ impl std::fmt::Debug for Destination {
                 .debug_tuple("Response")
                 .field(&"<reqwest::Response>")
                 .finish(),
-            Destination::Rocket(r) => f.debug_tuple("Rocket").field(r).finish(),
             Destination::None => write!(f, "None"),
         }
     }

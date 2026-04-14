@@ -82,7 +82,7 @@ impl Artful {
         let mut rocket = Rocket::new(params);
         let mut ctrl = FlowCtrl::new(plugins);
 
-        ctrl.call_next(&mut rocket).await;
+        ctrl.call_next(&mut rocket).await?;
 
         Ok(rocket.destination.unwrap_or_default())
     }

@@ -19,13 +19,12 @@ pub struct AddPayloadBodyPlugin;
 
 #[async_trait]
 impl Plugin for AddPayloadBodyPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> crate::Result<()> {
         if rocket.config.body.is_none() && !rocket.payload.is_empty() {
-            if let Ok(body) = rocket.packer.pack(&rocket.payload) {
-                rocket.config.body = Some(body);
-            }
+            let body = rocket.packer.pack(&rocket.payload)?;
+            rocket.config.body = Some(body);
         }
 
-        next.call(rocket).await;
+        next.call(rocket).await
     }
 }

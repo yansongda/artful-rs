@@ -91,9 +91,6 @@ pub struct RocketConfig {
     /// HTTP 选项（可动态修改）
     pub http: HttpOptions,
     
-    /// 是否返回 Rocket（调试用，可动态设置）
-    pub return_rocket: bool,
-    
     /// 响应解析策略（默认 JsonDirection，可动态修改）
     pub direction: DirectionKind,
 }
@@ -118,7 +115,6 @@ pub struct HttpOptions {
 | `_headers` | `config.headers` |
 | `_body` | `config.body` |
 | `_http.timeout` | `config.http.timeout` |
-| `_return_rocket` | `config.return_rocket` |
 | `_direction` | `config.direction` |
 
 **优势**：
@@ -209,7 +205,10 @@ pub trait Plugin: Send + Sync + 'static {
     /// # Arguments
     /// * `rocket` - 请求载体，包含所有数据
     /// * `next` - 下一个插件（闭包）
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>);
+    /// 
+    /// # Returns
+    /// * `Result<()>` - 成功或错误，错误会终止整个插件链
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> Result<()>;
 }
 
 /// 下一个插件的闭包（洋葱穿透）
@@ -219,8 +218,11 @@ pub struct Next<'a> {
 
 impl<'a> Next<'a> {
     /// 调用下一个插件
-    pub async fn call(self, rocket: &mut Rocket) {
-        self.ctrl.call_next(rocket).await;
+    /// 
+    /// # Returns
+    /// * `Result<()>` - 后续插件的结果，用 `?` 传播错误
+    pub async fn call(self, rocket: &mut Rocket) -> Result<()> {
+        self.ctrl.call_next(rocket).await
     }
 }
 ```
@@ -232,7 +234,7 @@ pub struct MyPlugin;
 
 #[async_trait]
 impl Plugin for MyPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> Result<()> {
         // ===== 前向逻辑 =====
         // 修改 config、payload 等
         
@@ -242,16 +244,18 @@ impl Plugin for MyPlugin {
         );
         
         // ===== 调用下一层 =====
-        next.call(rocket).await;
+        next.call(rocket).await?;  // 用 ? 传播后续插件错误
         
         // ===== 后向逻辑 =====
         // 处理响应、错误处理等
-        if let Some(resp) = rocket.destination_origin.as_ref() {
-            // 检查响应状态码等
-        }
+        // 只有前面都成功才会执行到这里
+        
+        Ok(())
     }
 }
 ```
+
+**错误传播**: 任一插件返回 `Err` 会终止整个链，错误向上传播到 `Artful::artful`。
 
 ### 2.5 FlowCtrl - 流向控制器
 
@@ -281,16 +285,16 @@ impl FlowCtrl {
     }
     
     /// 调用下一层插件（洋葱穿透）
-    pub async fn call_next(&mut self, rocket: &mut Rocket) {
+    pub async fn call_next(&mut self, rocket: &mut Rocket) -> Result<()> {
         if self.is_ceased || !self.has_next() {
-            return;
+            return Ok(());  // 正常结束
         }
         
         let plugin = self.plugins[self.cursor].clone();
         self.cursor += 1;
         
         let next = Next { ctrl: self };
-        plugin.assembly(rocket, next).await;
+        plugin.assembly(rocket, next).await  // 传播错误
     }
     
     /// 检查是否还有下一层
@@ -414,8 +418,8 @@ impl Artful {
         // 构建流向控制器
         let mut ctrl = FlowCtrl::new(plugins);
         
-        // 启动洋葱流程
-        ctrl.call_next(&mut rocket).await;
+        // 启动洋葱流程，用 ? 传播错误
+        ctrl.call_next(&mut rocket).await?;
         
         // 返回结果
         Ok(rocket.destination.unwrap_or_default())
@@ -496,8 +500,6 @@ pub enum DirectionKind {
     ResponseDirection,
     /// 不发起 HTTP 请求
     NoHttpRequestDirection,
-    /// 返回原始 Rocket（用于调试）
-    OriginResponseDirection,
     /// 自定义解析器
     Custom(Arc<dyn Direction>),
 }
@@ -509,8 +511,6 @@ pub enum Destination {
     Json(Value),
     /// 原始响应
     Response(reqwest::Response),
-    /// Rocket 本身（用于调试）
-    Rocket(Box<Rocket>),
     /// 空结果
     None,
 }
@@ -528,10 +528,10 @@ pub struct StartPlugin;
 
 #[async_trait]
 impl Plugin for StartPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
-        // v0.1.0: payload 已经是纯净业务参数
-        // 后续版本可在此添加初始化逻辑
-        next.call(rocket).await;
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> Result<()> {
+        // 将 params 合并到 payload
+        rocket.merge_payload(rocket.get_params().clone());
+        next.call(rocket).await
     }
 }
 ```
@@ -544,14 +544,14 @@ pub struct AddPayloadBodyPlugin;
 
 #[async_trait]
 impl Plugin for AddPayloadBodyPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> Result<()> {
         // 如果未手动指定 body，将 payload 序列化为 JSON
         if rocket.config.body.is_none() && !rocket.payload.is_empty() {
             let body = rocket.packer.pack(&rocket.payload)?;
             rocket.config.body = Some(body);
         }
         
-        next.call(rocket).await;
+        next.call(rocket).await
     }
 }
 ```
@@ -564,12 +564,12 @@ pub struct AddRadarPlugin;
 
 #[async_trait]
 impl Plugin for AddRadarPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
-        let method = rocket.config.method;
-        let url = &rocket.config.url;
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> Result<()> {
+        let method = rocket.config.method.clone();
+        let url = rocket.config.url.clone();
         
         let client = get_client();
-        let mut request_builder = client.request(method, url);
+        let mut request_builder = client.request(method, &url);
         
         // 添加 headers
         for (key, value) in &rocket.config.headers {
@@ -591,9 +591,12 @@ impl Plugin for AddRadarPlugin {
             );
         }
         
-        rocket.radar = Some(request_builder.build()?);
+        // build 失败返回 InvalidUrl 错误
+        let request = request_builder.build()
+            .map_err(|e| ArtfulError::InvalidUrl(e.to_string()))?;
+        rocket.radar = Some(request);
         
-        next.call(rocket).await;
+        next.call(rocket).await
     }
 }
 ```
@@ -606,52 +609,56 @@ pub struct ParserPlugin;
 
 #[async_trait]
 impl Plugin for ParserPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
-        // 不发起请求
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> Result<()> {
+        // NoHttpRequestDirection - 不发起请求
         if rocket.config.direction == DirectionKind::NoHttpRequestDirection {
-            next.call(rocket).await;
-            return;
+            return next.call(rocket).await;
         }
         
-        // 检查 radar
-        if rocket.radar.is_none() {
-            next.call(rocket).await;
-            return;
-        }
+        // 检查 radar，不存在则返回 MissingRequest 错误
+        let request = rocket.radar.take()
+            .ok_or(ArtfulError::MissingRequest)?;
         
         let client = get_client();
-        let request = rocket.radar.take().unwrap();
         
-        // 发送请求
-        let response = client.execute(request).await?;
+        // 发送请求，失败则返回 RequestFailed 错误
+        let response = client.execute(request).await
+            .map_err(ArtfulError::RequestFailed)?;
         rocket.destination_origin = Some(response);
         
         // 解析响应
-        match &rocket.config.direction {
+        let direction_kind = rocket.config.direction.clone();
+        let destination = match direction_kind {
             DirectionKind::JsonDirection => {
-                let direction = JsonDirection;
-                rocket.destination = Some(direction.parse(rocket).await?);
+                // JsonDirection 从 Response body 解析 JSON
+                JsonDirection.parse(rocket).await?
             }
             DirectionKind::ResponseDirection => {
-                let response = rocket.destination_origin.take().unwrap();
-                rocket.destination = Some(Destination::Response(response));
-            }
-            DirectionKind::OriginResponseDirection => {
-                if rocket.config.return_rocket {
-                    rocket.destination = Some(Destination::Rocket(
-                        Box::new(rocket.clone())
-                    ));
-                }
+                // 返回原始 Response
+                rocket.destination_origin.take()
+                    .map(Destination::Response)
+                    .ok_or(ArtfulError::MissingResponse)?
             }
             DirectionKind::Custom(d) => {
-                rocket.destination = Some(d.parse(rocket).await?);
+                d.parse(rocket).await?
             }
-            _ => {}
-        }
+            DirectionKind::NoHttpRequestDirection => {
+                Destination::None
+            }
+        };
         
-        next.call(rocket).await;
+        rocket.destination = Some(destination);
+        
+        next.call(rocket).await
     }
 }
+```
+
+**错误处理说明**：
+- `MissingRequest` - radar 未构建（AddRadarPlugin 未执行或失败）
+- `MissingResponse` - destination_origin 不存在
+- `RequestFailed` - HTTP 请求失败
+- `JsonSerializeError` - JSON 解析失败
 ```
 
 ---
@@ -685,10 +692,10 @@ struct MethodUrlPlugin {
 
 #[async_trait]
 impl Plugin for MethodUrlPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
         rocket.config.method = self.method.clone();
         rocket.config.url = self.url.clone();
-        next.call(rocket).await;
+        next.call(rocket).await
     }
 }
 
@@ -766,15 +773,31 @@ pub struct SignaturePlugin {
 
 #[async_trait]
 impl Plugin for SignaturePlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
         rocket.config.headers.insert(
             "X-Signature".to_string(),
             sign(&self.api_key, &rocket.payload),
         );
         
-        next.call(rocket).await;
+        next.call(rocket).await
     }
 }
+```
+
+### 5.5 错误处理
+
+```rust
+// HTTP 请求失败
+let result = Artful::artful(params, plugins).await;
+// result: Err(ArtfulError::RequestFailed(...))
+
+// radar 未构建
+let result = Artful::artful(params, vec![ParserPlugin]).await;
+// result: Err(ArtfulError::MissingRequest)
+
+// JSON 解析失败
+let result = Artful::artful(params, plugins).await;
+// result: Err(ArtfulError::JsonSerializeError(...))
 ```
 
 ---

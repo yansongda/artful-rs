@@ -14,10 +14,10 @@ struct MethodUrlPlugin {
 
 #[async_trait]
 impl Plugin for MethodUrlPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
         rocket.config.method = self.method.clone();
         rocket.config.url = self.url.clone();
-        next.call(rocket).await;
+        next.call(rocket).await
     }
 }
 
@@ -28,9 +28,9 @@ struct SetDirectionPlugin {
 
 #[async_trait]
 impl Plugin for SetDirectionPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
         rocket.config.direction = self.direction.clone();
-        next.call(rocket).await;
+        next.call(rocket).await
     }
 }
 

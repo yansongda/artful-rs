@@ -12,12 +12,13 @@
 //!
 //! #[async_trait]
 //! impl Plugin for MyPlugin {
-//!     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) {
+//!     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artful::Result<()> {
 //!         // 前向逻辑：修改 rocket
 //!         
-//!         next.call(rocket).await;  // 调用下一层
+//!         next.call(rocket).await?;  // 调用下一层
 //!         
 //!         // 后向逻辑：处理响应
+//!         Ok(())
 //!     }
 //! }
 //! ```
@@ -31,5 +32,5 @@ use crate::flow_ctrl::Next;
 #[async_trait]
 pub trait Plugin: Send + Sync + 'static {
     /// 组装请求
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>);
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> crate::Result<()>;
 }
