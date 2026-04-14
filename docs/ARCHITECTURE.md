@@ -91,7 +91,7 @@ pub struct RocketConfig {
     /// HTTP 选项（可动态修改）
     pub http: HttpOptions,
     
-    /// 响应解析策略（默认 JsonDirection，可动态修改）
+    /// 响应解析策略（默认 Json，可动态修改）
     pub direction: DirectionKind,
 }
 
@@ -508,11 +508,11 @@ pub trait Direction: Send + Sync {
 #[derive(Clone)]
 pub enum DirectionKind {
     /// 解析为 JSON（默认）
-    JsonDirection,
+    Json,
     /// 返回原始 Response
-    ResponseDirection,
+    Response,
     /// 不发起 HTTP 请求
-    NoHttpRequestDirection,
+    NoRequest,
     /// 自定义解析器
     Custom(Arc<dyn Direction>),
 }
@@ -623,8 +623,8 @@ pub struct ParserPlugin;
 #[async_trait]
 impl Plugin for ParserPlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> Result<()> {
-        // NoHttpRequestDirection - 不发起请求
-        if rocket.config.direction == DirectionKind::NoHttpRequestDirection {
+        // NoRequest - 不发起请求
+        if rocket.config.direction == DirectionKind::NoRequest {
             return next.call(rocket).await;
         }
         
@@ -642,11 +642,11 @@ impl Plugin for ParserPlugin {
         // 解析响应
         let direction_kind = rocket.config.direction.clone();
         let destination = match direction_kind {
-            DirectionKind::JsonDirection => {
-                // JsonDirection 从 Response body 解析 JSON
-                JsonDirection.parse(rocket).await?
+            DirectionKind::Json => {
+                // Json 从 Response body 解析 JSON
+                Json.parse(rocket).await?
             }
-            DirectionKind::ResponseDirection => {
+            DirectionKind::Response => {
                 // 返回原始 Response
                 rocket.destination_origin.take()
                     .map(Destination::Response)
@@ -655,7 +655,7 @@ impl Plugin for ParserPlugin {
             DirectionKind::Custom(d) => {
                 d.parse(rocket).await?
             }
-            DirectionKind::NoHttpRequestDirection => {
+            DirectionKind::NoRequest => {
                 Destination::None
             }
         };
@@ -846,7 +846,7 @@ artful-rs/
 │   ├── direction.rs            # Direction trait + DirectionKind + Destination
 │   ├── directions/             # 内置 Direction 实现
 │   │   ├── mod.rs              # 导出所有内置 Direction
-│   │   └── json.rs             # JsonDirection
+│   │   └── json.rs             # Json
 │   │
 │   ├── packer.rs               # Packer trait
 │   ├── packers/                # 内置 Packer 实现
@@ -890,7 +890,7 @@ artful-rs/
 | `src/plugins/` | 内置插件 | `StartPlugin`, `AddRadarPlugin`, `ParserPlugin`, `AddPayloadBodyPlugin` |
 | `src/shortcut.rs` | 快捷方式 trait | `Shortcut` trait |
 | `src/direction.rs` | 解析策略 trait | `Direction`, `DirectionKind`, `Destination` |
-| `src/directions/` | 内置解析器 | `JsonDirection` |
+| `src/directions/` | 内置解析器 | `Json` |
 | `src/packer.rs` | 序列化 trait | `Packer` trait |
 | `src/packers/` | 内置序列化器 | `JsonPacker` |
 | `src/http.rs` | HTTP 客户端 | reqwest 全局单例 |
@@ -926,7 +926,7 @@ wiremock = "0.6"
 - [x] 内置插件（Start, AddPayloadBody, AddRadar, Parser, Log）
 - [x] reqwest HTTP 客户端单例封装
 - [x] JSON Packer
-- [x] Direction 解析策略（JsonDirection, ResponseDirection 等）
+- [x] Direction 解析策略（Json, Response 等）
 - [x] Artful 主入口（artisan, shortcut, raw 方法）
 - [x] Shortcut trait
 - [x] 基础测试覆盖（18 tests）

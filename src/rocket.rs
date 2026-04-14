@@ -40,7 +40,7 @@ impl Default for RocketConfig {
             headers: HashMap::new(),
             body: None,
             http: HttpOptions::default(),
-            direction: DirectionKind::JsonDirection,
+            direction: DirectionKind::Json,
         }
     }
 }

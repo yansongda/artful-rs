@@ -196,7 +196,7 @@ fn test_rocket_config_direction_default() {
     use artisan::DirectionKind;
 
     let config = RocketConfig::default();
-    assert!(matches!(config.direction, DirectionKind::JsonDirection));
+    assert!(matches!(config.direction, DirectionKind::Json));
 }
 
 #[test]
@@ -204,8 +204,8 @@ fn test_rocket_config_custom_direction() {
     use artisan::DirectionKind;
 
     let config = RocketConfig {
-        direction: DirectionKind::ResponseDirection,
+        direction: DirectionKind::Response,
         ..Default::default()
     };
-    assert!(matches!(config.direction, DirectionKind::ResponseDirection));
+    assert!(matches!(config.direction, DirectionKind::Response));
 }

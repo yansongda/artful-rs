@@ -26,8 +26,8 @@ pub struct ParserPlugin;
 #[async_trait]
 impl Plugin for ParserPlugin {
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> crate::Result<()> {
-        // NoHttpRequestDirection - 不发起请求，直接调用下一层
-        if let DirectionKind::NoHttpRequestDirection = rocket.config.direction {
+        // NoRequest - 不发起请求，直接调用下一层
+        if let DirectionKind::NoRequest = rocket.config.direction {
             return next.call(rocket).await;
         }
 
@@ -41,14 +41,14 @@ impl Plugin for ParserPlugin {
 
         // 解析响应
         let destination = match &rocket.config.direction {
-            DirectionKind::JsonDirection => JsonDirection.parse(rocket).await?,
-            DirectionKind::ResponseDirection => rocket
+            DirectionKind::Json => JsonDirection.parse(rocket).await?,
+            DirectionKind::Response => rocket
                 .destination_origin
                 .take()
                 .map(Destination::Response)
                 .ok_or(ArtfulError::MissingResponse)?,
             DirectionKind::Custom(direction) => direction.clone().parse(rocket).await?,
-            DirectionKind::NoHttpRequestDirection => Destination::None,
+            DirectionKind::NoRequest => Destination::None,
         };
 
         rocket.destination = Some(destination);

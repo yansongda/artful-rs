@@ -64,7 +64,7 @@ async fn test_artisan_with_response_direction() {
     let mut rocket = Rocket::new(HashMap::new());
     rocket.config.method = reqwest::Method::GET;
     rocket.config.url = mock_server.uri() + "/raw";
-    rocket.config.direction = DirectionKind::ResponseDirection;
+    rocket.config.direction = DirectionKind::Response;
 
     let plugins: Vec<Arc<dyn Plugin>> = vec![Arc::new(AddRadarPlugin), Arc::new(ParserPlugin)];
 

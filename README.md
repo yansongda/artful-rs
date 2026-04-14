@@ -200,9 +200,9 @@ pub trait Plugin: Send + Sync + 'static {
 
 ```rust
 pub enum DirectionKind {
-    JsonDirection,             // 解析为 JSON（默认）
-    ResponseDirection,         // 返回原始 Response
-    NoHttpRequestDirection,    // 不发起 HTTP 请求
+    Json,             // 解析为 JSON（默认）
+    Response,         // 返回原始 Response
+    NoRequest,        // 不发起 HTTP 请求
     Custom(Arc<dyn Direction>), // 自定义解析器
 }
 ```
