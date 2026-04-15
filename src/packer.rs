@@ -12,6 +12,17 @@ use std::collections::HashMap;
 use crate::Result;
 
 pub trait Packer: Send + Sync + std::fmt::Debug {
+    /// 序列化数据
+    ///
+    /// # Errors
+    ///
+    /// 返回错误当序列化失败。
     fn pack(&self, data: &HashMap<String, Value>) -> Result<String>;
+
+    /// 反序列化数据
+    ///
+    /// # Errors
+    ///
+    /// 返回错误当反序列化失败。
     fn unpack(&self, data: &str) -> Result<Value>;
 }

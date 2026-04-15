@@ -64,6 +64,13 @@ impl Artful {
     ///
     /// - `params`: 原始参数（存储在 rocket.params，不可变）
     /// - `plugins`: 插件列表（负责设置 method、url 等配置）
+    ///
+    /// # Errors
+    ///
+    /// 返回错误当：
+    /// - 插件执行失败
+    /// - HTTP 请求失败
+    /// - 响应解析失败
     pub async fn artful(
         params: HashMap<String, Value>,
         plugins: Vec<Arc<dyn Plugin>>,
@@ -82,6 +89,13 @@ impl Artful {
     ///
     /// - `shortcut`: Shortcut 实例
     /// - `params`: 原始参数
+    ///
+    /// # Errors
+    ///
+    /// 返回错误当：
+    /// - 插件执行失败
+    /// - HTTP 请求失败
+    /// - 响应解析失败
     pub async fn shortcut<S: Shortcut>(
         shortcut: S,
         params: HashMap<String, Value>,
@@ -91,6 +105,10 @@ impl Artful {
     }
 
     /// 直接调用 HTTP（跳过插件链）
+    ///
+    /// # Errors
+    ///
+    /// 返回错误当 HTTP 请求失败。
     pub async fn raw(request: reqwest::Request) -> Result<reqwest::Response> {
         get_client()
             .execute(request)

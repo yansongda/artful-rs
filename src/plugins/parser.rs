@@ -5,8 +5,8 @@
 //! # 行为
 //!
 //! - 检查 rocket.config.direction，决定是否发起请求
-//! - 执行 HTTP 请求，存入 rocket.destination_origin
-//! - 根据 DirectionKind 解析响应
+//! - 执行 HTTP 请求，存入 `rocket.destination_origin`
+//! - 根据 `DirectionKind` 解析响应
 //! - 结果存入 rocket.destination
 
 use async_trait::async_trait;

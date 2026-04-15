@@ -6,13 +6,13 @@
 //!
 //! - [`Rocket`] - 请求载体，携带所有请求/响应数据
 //! - [`RocketConfig`] - HTTP 请求配置（method, url, headers 等）
-//! - [`HttpOptions`] - HTTP 选项（timeout, connect_timeout）
+//! - [`HttpOptions`] - HTTP 选项（timeout, `connect_timeout`)
 //!
 //! # 设计说明
 //!
 //! - `params`: 原始参数，整个生命周期中保持不变
-//! - `payload`: 业务参数，由 StartPlugin 从 params 初始化，后续插件可修改
-//! - RocketConfig 所有字段可在 plugin 中动态修改
+//! - `payload`: 业务参数，由 `StartPlugin` 从 params 初始化，后续插件可修改
+//! - `RocketConfig` 所有字段可在 plugin 中动态修改
 
 use serde_json::Value;
 use std::collections::HashMap;
@@ -92,15 +92,16 @@ impl std::fmt::Debug for Rocket {
             .field("params", &self.params)
             .field("payload", &self.payload)
             .field("config", &self.config)
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
 impl Rocket {
     /// 创建 Rocket
     ///
-    /// params 存储原始参数，payload 初始为空（由 StartPlugin 初始化）
+    /// params 存储原始参数，payload 初始为空（由 `StartPlugin` 初始化）
     /// config 使用默认值，由插件负责设置 method、url 等
+    #[must_use]
     pub fn new(params: HashMap<String, Value>) -> Self {
         Self {
             params,
@@ -120,7 +121,7 @@ impl Rocket {
 
     /// 合并参数到 payload
     ///
-    /// 将 params 中的参数合并到 payload，用于 StartPlugin 初始化 payload
+    /// 将 params 中的参数合并到 payload，用于 `StartPlugin` 初始化 payload
     pub fn merge_payload(&mut self, params: HashMap<String, Value>) {
         self.payload.extend(params);
     }

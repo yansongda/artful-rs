@@ -1,6 +1,6 @@
 //! 构建 HTTP Request 插件
 //!
-//! 根据 RocketConfig 构建 HTTP Request 对象。
+//! 根据 `RocketConfig` 构建 HTTP Request 对象。
 //!
 //! # 行为
 //!
