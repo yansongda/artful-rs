@@ -25,7 +25,7 @@ pub mod rocket;
 pub mod shortcut;
 
 pub use artisan::Artful;
-pub use config::{Config, LoggerConfig};
+pub use config::Config;
 pub use direction::{Destination, Direction, DirectionKind};
 pub use error::{ArtfulError, Result};
 pub use flow_ctrl::{FlowCtrl, Next};

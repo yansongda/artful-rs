@@ -58,6 +58,9 @@ pub struct HttpOptions {
 
     /// 每个 host 最大空闲连接数，默认 20
     pub pool_max_idle_per_host: Option<usize>,
+
+    /// User-Agent 字符串
+    pub user_agent: Option<&'static str>,
 }
 
 pub struct Rocket {

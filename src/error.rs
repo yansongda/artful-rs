@@ -1,7 +1,7 @@
 //! 错误类型定义
 //!
 //! 定义框架中所有可能出现的错误类型，包括：
-//! - HTTP 请求错误（RequestFailed, Timeout, NetworkError）
+//! - HTTP 请求错误（RequestFailed）
 //! - 序列化错误（JsonSerializeError, JsonDeserializeError）
 //! - 插件错误（PluginExecutionError）
 //! - 参数错误（MissingParameter, InvalidParameter）
@@ -13,12 +13,6 @@ use thiserror::Error;
 pub enum ArtfulError {
     #[error("HTTP 请求失败: {0}")]
     RequestFailed(#[from] reqwest::Error),
-
-    #[error("请求超时")]
-    Timeout,
-
-    #[error("网络错误: {0}")]
-    NetworkError(String),
 
     #[error("无效的 URL: {source}")]
     InvalidUrl {

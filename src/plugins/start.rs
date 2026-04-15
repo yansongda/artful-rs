@@ -18,6 +18,10 @@ pub struct StartPlugin;
 
 #[async_trait]
 impl Plugin for StartPlugin {
+    fn name(&self) -> &'static str {
+        "StartPlugin"
+    }
+
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> crate::Result<()> {
         if rocket.payload.is_empty() {
             rocket.merge_payload(rocket.get_params().clone());

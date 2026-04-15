@@ -82,7 +82,7 @@ src/
 ├── packer.rs        # Packer trait
 ├── packers/         # Built-in serializers (JsonPacker)
 ├── shortcut.rs      # Shortcut trait
-├── config.rs        # Config + LoggerConfig (global)
+├── config.rs        # Config (global)
 ├── error.rs         # ArtfulError enum (thiserror)
 └── http.rs          # Global Client singleton (OnceLock)
 ```
