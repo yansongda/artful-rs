@@ -12,7 +12,13 @@ use serde_json::Value;
 use crate::plugin::Plugin;
 
 /// 快捷方式 trait
-pub trait Shortcut: Default {
+///
+/// 该 trait 是 dyn compatible 的，可以用作 trait object：
+///
+/// ```ignore
+/// let shortcuts: Vec<Box<dyn Shortcut>> = vec![...];
+/// ```
+pub trait Shortcut {
     /// 返回插件列表
     fn get_plugins(&self, params: &HashMap<String, Value>) -> Vec<Arc<dyn Plugin>>;
 }

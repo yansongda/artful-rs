@@ -65,14 +65,14 @@ async fn main() -> artisan::Result<()> {
     let mut params = HashMap::new();
     params.insert("data".to_string(), json!("hello world"));
 
-    let result = Artful::shortcut::<HttpbinPostShortcut>(params).await?;
+    let result = Artful::shortcut(HttpbinPostShortcut::default(), params).await?;
 
     if let artisan::Destination::Json(json) = result {
         println!("POST Response: {}", json);
     }
 
     // 使用 GET 快捷方式
-    let result = Artful::shortcut::<HttpbinGetShortcut>(HashMap::new()).await?;
+    let result = Artful::shortcut(HttpbinGetShortcut::default(), HashMap::new()).await?;
 
     if let artisan::Destination::Json(json) = result {
         println!("GET Response: {}", json);
