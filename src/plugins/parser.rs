@@ -25,6 +25,10 @@ pub struct ParserPlugin;
 
 #[async_trait]
 impl Plugin for ParserPlugin {
+    fn name(&self) -> &'static str {
+        "ParserPlugin"
+    }
+
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> crate::Result<()> {
         // NoRequest - 不发起请求，直接调用下一层
         if let DirectionKind::NoRequest = rocket.config.direction {

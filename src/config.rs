@@ -1,8 +1,6 @@
 //! 框架配置模块
 //!
-//! 定义框架级别的配置，包括：
-//! - [`Config`] - 框架主配置
-//! - [`LoggerConfig`] - 日志配置
+//! 定义框架级别的配置 [`Config`]。
 
 use serde_json::Value;
 use std::collections::HashMap;
@@ -12,9 +10,6 @@ use crate::rocket::HttpOptions;
 /// 框架全局配置
 #[derive(Debug, Clone, Default)]
 pub struct Config {
-    /// 日志配置
-    pub logger: LoggerConfig,
-
     /// HTTP 默认选项
     pub http: HttpOptions,
 
@@ -37,19 +32,4 @@ pub struct Config {
     /// };
     /// ```
     pub extra: HashMap<String, Value>,
-}
-
-#[derive(Debug, Clone)]
-pub struct LoggerConfig {
-    pub enable: bool,
-    pub level: String,
-}
-
-impl Default for LoggerConfig {
-    fn default() -> Self {
-        Self {
-            enable: true,
-            level: "info".to_string(),
-        }
-    }
 }

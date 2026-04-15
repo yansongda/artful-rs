@@ -31,6 +31,11 @@ use crate::flow_ctrl::Next;
 /// 插件 trait - 洋葱模型核心
 #[async_trait]
 pub trait Plugin: Send + Sync + 'static {
+    /// 返回插件名称，用于调试和错误信息
+    fn name(&self) -> &'static str {
+        "UnknownPlugin"
+    }
+
     /// 组装请求
     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> crate::Result<()>;
 }

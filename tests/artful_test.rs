@@ -80,8 +80,7 @@ async fn test_artisan_with_response_direction() {
 fn test_artful_get_config_default() {
     // get_config 在未设置时返回默认配置
     let config = Artful::get_config();
-    assert!(config.logger.enable);
-    assert_eq!(config.logger.level, "info");
+    assert!(config.extra.is_empty());
 }
 
 #[test]
