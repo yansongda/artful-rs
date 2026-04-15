@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-04-15
+
+### Changed
+
+- 移除 `Shortcut` trait 的 `Default` bound，使其 dyn compatible
+  ([c4c1b9f](https://github.com/yansongda/artful-rs/commit/c4c1b9f))
+- 代码优化 - 错误处理、架构、性能
+  ([b5f3e5d](https://github.com/yansongda/artful-rs/commit/b5f3e5d))
+
+### Style
+
+- 修复所有 clippy pedantic 警告
+  ([4651893](https://github.com/yansongda/artful-rs/commit/4651893))
+
+### Documentation
+
+- 添加 CHANGELOG.md 记录版本变更
+  ([07f60e3](https://github.com/yansongda/artful-rs/commit/07f60e3))
+- CHANGELOG 补充 commit 链接
+  ([7dd4dd3](https://github.com/yansongda/artful-rs/commit/7dd4dd3))
+
 ## [0.10.0] - 2026-04-14
 
 ### Changed
