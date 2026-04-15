@@ -1,4 +1,4 @@
-//! Artisan - Api RequesT Framework U Like
+//! Artisan - Api `RequesT` Framework U Like
 //!
 //! 基于洋葱模型的 Rust HTTP 客端框架。
 //!

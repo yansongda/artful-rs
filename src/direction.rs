@@ -57,7 +57,7 @@ impl std::fmt::Debug for Destination {
 impl std::fmt::Display for Destination {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Destination::Json(v) => write!(f, "{}", v),
+            Destination::Json(v) => write!(f, "{v}"),
             Destination::Response(_) => write!(f, "<HTTP Response>"),
             Destination::None => write!(f, "None"),
         }

@@ -40,6 +40,7 @@ impl std::fmt::Debug for FlowCtrl {
 
 impl FlowCtrl {
     /// 创建新的流向控制器
+    #[must_use]
     pub fn new(plugins: Vec<Arc<dyn Plugin>>) -> Self {
         Self {
             cursor: 0,
@@ -49,6 +50,10 @@ impl FlowCtrl {
     }
 
     /// 调用下一层插件（洋葱穿透）
+    ///
+    /// # Errors
+    ///
+    /// 返回错误当插件执行失败。
     pub async fn call_next(&mut self, rocket: &mut Rocket) -> crate::Result<()> {
         if self.is_ceased || !self.has_next() {
             return Ok(());
@@ -60,6 +65,7 @@ impl FlowCtrl {
     }
 
     /// 检查是否还有下一层
+    #[must_use]
     pub fn has_next(&self) -> bool {
         self.cursor < self.plugins.len()
     }
@@ -77,6 +83,7 @@ impl FlowCtrl {
     }
 
     /// 检查是否已终止
+    #[must_use]
     pub fn is_ceased(&self) -> bool {
         self.is_ceased
     }
@@ -87,8 +94,12 @@ pub struct Next<'a> {
     pub(crate) ctrl: &'a mut FlowCtrl,
 }
 
-impl<'a> Next<'a> {
+impl Next<'_> {
     /// 调用下一个插件
+    ///
+    /// # Errors
+    ///
+    /// 返回错误当插件执行失败。
     pub async fn call(self, rocket: &mut Rocket) -> crate::Result<()> {
         self.ctrl.call_next(rocket).await
     }
