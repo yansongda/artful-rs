@@ -116,7 +116,11 @@ impl Shortcut for MyApiShortcut {
     }
 }
 
-let result = Artful::shortcut::<MyApiShortcut>(HashMap::new()).await?;
+let shortcut = MyApiShortcut {
+    method: reqwest::Method::POST,
+    url: "https://api.example.com/orders".to_string(),
+};
+let result = Artful::shortcut(shortcut, HashMap::new()).await?;
 ```
 
 ### 自定义插件
