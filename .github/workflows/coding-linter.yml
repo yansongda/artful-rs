@@ -28,7 +28,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
       - name: Run cargo check
@@ -54,7 +54,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
       - name: Run cargo fmt
@@ -81,7 +81,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
       - name: Run cargo test

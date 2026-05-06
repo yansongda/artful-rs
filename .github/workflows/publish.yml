@@ -3,8 +3,8 @@ name: publish
 on:
   push:
     tags:
-      - 'artisan-http/v*'
-      - 'artisan/v*'
+      - "artisan-http/v*"
+      - "artisan/v*"
 
 env:
   CARGO_TERM_COLOR: always
@@ -34,7 +34,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
       - name: Publish artisan-http
@@ -44,7 +44,6 @@ jobs:
     name: Publish artisan
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/artisan/')
-    needs: publish-artisan-http
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -64,7 +63,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
       - name: Publish artisan
