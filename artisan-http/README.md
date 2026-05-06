@@ -1,8 +1,8 @@
 # artisan-http
 
-> HTTP implementation for artisan framework
+> Api RequesT Framework U Like - 你喜欢的 Rust API 请求框架
 
-基于洋葱模型的 Rust HTTP 客户端框架实现。
+基于洋葱模型的 Rust HTTP 客户端框架，灵感来自 [yansongda/artful](https://github.com/yansongda/artful)。
 
 ## 特性
 
