@@ -1,0 +1,21 @@
+[package]
+name = "artisan-http"
+version = "0.12.0"
+description = "Api RequesT Framework U Like - 你喜欢的 Rust API 请求框架"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+tokio = { version = "~1.52.0", features = ["rt-multi-thread", "macros"] }
+async-trait = { version = "~0.1.89" }
+reqwest = { version = "~0.13.2", features = ["json"] }
+serde = { version = "~1.0.228", features = ["derive"] }
+serde_json = { version = "~1.0.149" }
+tracing = { version = "~0.1.44" }
+thiserror = { version = "~2.0.18" }
+
+[dev-dependencies]
+tokio-test = { version = "~0.4.5" }
+wiremock = { version = "~0.6.5" }

@@ -9,30 +9,45 @@
 //! - [`FlowCtrl`] - 流向控制器，管理插件执行顺序
 //! - [`Artful`] - 框架主入口
 
-pub mod direction;
-pub mod directions;
-pub mod error;
-pub use directions::JsonDirection;
-pub mod artisan;
-pub mod config;
-pub mod flow_ctrl;
-pub mod http;
-pub mod packer;
-pub mod packers;
-pub mod plugin;
-pub mod plugins;
-pub mod rocket;
-pub mod shortcut;
+// 核心类型
+#[cfg(feature = "http")]
+pub use artisan_http::Artful;
+#[cfg(feature = "http")]
+pub use artisan_http::Plugin;
+#[cfg(feature = "http")]
+pub use artisan_http::Rocket;
+#[cfg(feature = "http")]
+pub use artisan_http::RocketConfig;
+#[cfg(feature = "http")]
+pub use artisan_http::{ArtfulError, Result};
+#[cfg(feature = "http")]
+pub use artisan_http::{FlowCtrl, Next};
 
-pub use artisan::Artful;
-pub use config::Config;
-pub use direction::{Destination, Direction, DirectionKind};
-pub use error::{ArtfulError, Result};
-pub use flow_ctrl::{FlowCtrl, Next};
-pub use http::get_client;
-pub use packer::Packer;
-pub use packers::JsonPacker;
-pub use plugin::Plugin;
-pub use plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
-pub use rocket::{HttpOptions, Rocket, RocketConfig};
-pub use shortcut::Shortcut;
+// 配置和选项
+#[cfg(feature = "http")]
+pub use artisan_http::Config;
+#[cfg(feature = "http")]
+pub use artisan_http::HttpOptions;
+
+// 响应解析
+#[cfg(feature = "http")]
+pub use artisan_http::{Destination, Direction, DirectionKind};
+
+// 序列化
+#[cfg(feature = "http")]
+pub use artisan_http::Packer;
+
+// 快捷方式
+#[cfg(feature = "http")]
+pub use artisan_http::Shortcut;
+
+// 内置插件
+#[cfg(feature = "http")]
+pub use artisan_http::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
+
+// 模块（供高级用户使用）
+#[cfg(feature = "http")]
+pub use artisan_http::{
+    config, direction, directions, error, flow_ctrl, http, packer, packers, plugin, plugins,
+    rocket, shortcut,
+};

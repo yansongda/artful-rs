@@ -1,5 +1,5 @@
-use artisan::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
-use artisan::{Plugin, Shortcut};
+use artisan_http::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
+use artisan_http::{Plugin, Shortcut};
 use std::collections::HashMap;
 use std::sync::Arc;
 

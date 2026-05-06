@@ -1,7 +1,7 @@
 //! 自定义插件示例 - 签名插件
 
-use artisan::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
-use artisan::{Artful, Plugin, Rocket, flow_ctrl::Next};
+use artisan_http::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
+use artisan_http::{Artful, Plugin, Rocket, flow_ctrl::Next};
 use async_trait::async_trait;
 use serde_json::json;
 use std::collections::HashMap;
@@ -15,7 +15,7 @@ struct MethodUrlPlugin {
 
 #[async_trait]
 impl Plugin for MethodUrlPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan_http::Result<()> {
         rocket.config.method = self.method.clone();
         rocket.config.url = self.url.clone();
         next.call(rocket).await
@@ -29,7 +29,7 @@ struct SignaturePlugin {
 
 #[async_trait]
 impl Plugin for SignaturePlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan_http::Result<()> {
         rocket
             .config
             .headers
@@ -43,7 +43,7 @@ impl Plugin for SignaturePlugin {
 }
 
 #[tokio::main]
-async fn main() -> artisan::Result<()> {
+async fn main() -> artisan_http::Result<()> {
     let mut params = HashMap::new();
     params.insert("order_id".to_string(), json!("123"));
     params.insert("amount".to_string(), json!(100));
@@ -64,7 +64,7 @@ async fn main() -> artisan::Result<()> {
 
     let result = Artful::artful(params, plugins).await?;
 
-    if let artisan::Destination::Json(json) = result {
+    if let artisan_http::Destination::Json(json) = result {
         println!("Response: {}", json);
     }
 

@@ -5,14 +5,14 @@
 //! # 插件编写模式
 //!
 //! ```rust
-//! use artisan::{Plugin, Rocket, flow_ctrl::Next};
+//! use artisan_http::{Plugin, Rocket, flow_ctrl::Next};
 //! use async_trait::async_trait;
 //!
 //! pub struct MyPlugin;
 //!
 //! #[async_trait]
 //! impl Plugin for MyPlugin {
-//!     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
+//!     async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan_http::Result<()> {
 //!         // 前向逻辑：修改 rocket
 //!         
 //!         next.call(rocket).await?;  // 调用下一层
