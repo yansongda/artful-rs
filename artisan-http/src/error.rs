@@ -9,6 +9,7 @@
 
 use thiserror::Error;
 
+/// 框架错误类型
 #[derive(Debug, Error)]
 pub enum ArtfulError {
     #[error("HTTP 请求失败: {0}")]
@@ -57,4 +58,5 @@ pub enum ArtfulError {
     Other(String),
 }
 
+/// 框架 Result 类型别名
 pub type Result<T> = std::result::Result<T, ArtfulError>;
