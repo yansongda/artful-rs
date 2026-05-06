@@ -19,7 +19,7 @@ cargo add artisan-http
 
 ```toml
 [dependencies]
-artisan-http = "~X.Y.Z"
+artisan-http = "~0.12.0"
 ```
 
 ## 快速开始
