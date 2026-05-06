@@ -5,7 +5,7 @@ edition = "2024"
 rust-version = "1.85"
 description = "Api RequesT Framework U Like - 你喜欢的 Rust API 请求框架"
 license = "MIT"
-repository = "https://github.com/yansongda/artful-rs"
+repository = "https://github.com/yansongda/artisan"
 
 [workspace]
 members = ["artisan-*"]
@@ -14,7 +14,7 @@ members = ["artisan-*"]
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"
-repository = "https://github.com/yansongda/artful-rs"
+repository = "https://github.com/yansongda/artisan"
 
 [features]
 default = ["http"]

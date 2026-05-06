@@ -1,10 +1,10 @@
 [package]
 name = "artisan-http"
-version = "0.1.0"
-edition = "2024"
-rust-version = "1.85"
-license = "MIT"
-repository = "https://github.com/yansongda/artful-rs"
+version = "0.12.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [dependencies]
 tokio = { version = "~1.52.0", features = ["rt-multi-thread", "macros"] }

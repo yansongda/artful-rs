@@ -2,34 +2,72 @@
 
 ## Project Overview
 
-**artisan** (crate name, internal struct `Artful`) - Rust HTTP client framework using onion model pattern.
+**artisan** - Rust HTTP client framework using onion model pattern.
 
 - Edition: 2024
 - MSRV: 1.85
 - License: MIT
 
+## Workspace Structure
+
+```
+artisan/                    # Root package (facade)
+├── Cargo.toml              # Workspace config + facade package
+├── src/lib.rs              # Facade with feature-controlled re-export
+├── artisan-http/           # HTTP implementation crate
+│   ├── Cargo.toml
+│   ├── src/                # All implementation code
+│   ├── tests/              # All tests (59 tests)
+│   └── examples/           # All examples
+└── examples/               # Root examples (for backward compatibility)
+```
+
+### Crate Roles
+
+- **artisan**: Facade crate with feature-controlled re-export
+  - Default feature includes "http" (re-exports artisan-http)
+  - Can be used without HTTP functionality: `default-features = false`
+- **artisan-http**: HTTP implementation crate
+  - Contains all implementation code
+  - Independent version management
+  - See [artisan-http/AGENTS.md](artisan-http/AGENTS.md) for details
+
+### Feature Control
+
+```toml
+# Default: includes HTTP functionality
+[dependencies]
+artisan = "0.12"
+
+# Without HTTP: pure facade
+[dependencies]
+artisan = { version = "0.12", default-features = false }
+
+# Direct dependency: explicit HTTP
+[dependencies]
+artisan-http = "0.1"
+```
+
 ## Commands
 
 ```bash
-# Build & check
-cargo check --all-features
+# Build & check (workspace)
+cargo check --workspace --all-features
 
 # Test (59 tests)
-cargo test --all-features
+cargo test --workspace --all-features
 
 # Format & lint
 cargo fmt --all
-cargo clippy -- -D warnings
+cargo clippy --workspace -- -D warnings
 
 # Run examples
-cargo run --example basic
-cargo run --example config
-cargo run --example shortcut
-cargo run --example custom_plugin
-cargo run --example direction
+cargo run -p artisan-http --example basic
+cargo run -p artisan --example basic
 
 # Publish (automated via GitHub tag)
-# Manual: cargo publish --token $CARGO_TOKEN
+# Manual: cargo publish -p artisan-http --token $CARGO_TOKEN
+# Manual: cargo publish -p artisan --token $CARGO_TOKEN
 ```
 
 ## Before Commit (Mandatory)
@@ -38,133 +76,13 @@ After modifying any `.rs` file, ensure all three pass:
 
 ```bash
 cargo fmt --all -- --check  # Format check
-cargo clippy -- -D warnings # Lint check
-cargo test --all-features   # All tests
+cargo clippy --workspace -- -D warnings # Lint check
+cargo test --workspace --all-features   # All tests
 ```
-
-## Architecture
-
-### Core Concepts (Onion Model)
-
-```
-Request → Plugin1 → Plugin2 → ... → HTTP → ... → Plugin2 → Plugin1 → Response
-```
-
-**Key Types**:
-
-| Type | Role | File |
-|------|------|------|
-| `Artful` | Main entry point | `src/artisan.rs` |
-| `Rocket` | Request/response carrier | `src/rocket.rs` |
-| `Plugin` | Middleware trait | `src/plugin.rs` |
-| `FlowCtrl` | Execution controller | `src/flow_ctrl.rs` |
-| `Next` | Chain continuation | `src/flow_ctrl.rs` |
-| `Direction` | Response parser trait | `src/direction.rs` |
-| `Packer` | Serializer trait | `src/packer.rs` |
-| `Shortcut` | Plugin preset trait | `src/shortcut.rs` |
-
-### Module Structure
-
-```
-src/
-├── lib.rs           # Public API exports
-├── artisan.rs       # Artful struct (config, artful, shortcut, raw methods)
-├── rocket.rs        # Rocket + RocketConfig + HttpOptions
-├── flow_ctrl.rs     # FlowCtrl + Next (onion control)
-├── plugin.rs        # Plugin trait (async_trait)
-├── plugins/         # Built-in plugins
-│   ├── start.rs     # StartPlugin (init payload)
-│   ├── add_radar.rs # AddRadarPlugin (build Request)
-│   ├── parser.rs    # ParserPlugin (execute + parse)
-│   └── add_payload_body.rs
-├── direction.rs     # Direction trait + DirectionKind + Destination
-├── directions/      # Built-in parsers (JsonDirection)
-├── packer.rs        # Packer trait
-├── packers/         # Built-in serializers (JsonPacker)
-├── shortcut.rs      # Shortcut trait
-├── config.rs        # Config (global)
-├── error.rs         # ArtfulError enum (thiserror)
-└── http.rs          # Global Client singleton (OnceLock)
-```
-
-## Patterns & Conventions
-
-### Plugin Implementation
-
-```rust
-#[derive(Clone, Copy, Debug, Default)]  // Required for zero-size plugins
-pub struct MyPlugin;
-
-#[async_trait]
-impl Plugin for MyPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> Result<()> {
-        // Forward logic
-        next.call(rocket).await?;  // Propagate to next layer
-        // Backward logic
-        Ok(())
-    }
-}
-```
-
-### HTTP Client Singleton
-
-Global `reqwest::Client` via `OnceLock` in `src/http.rs`. Connection pool shared across all requests.
-
-### Error Handling
-
-- `ArtfulError` uses `thiserror` with `#[source]` for error chains
-- `JsonDeserializeError` requires `source: Option<serde_json::Error>`
-- `InvalidUrl` uses `source: reqwest::Error` (not String)
-
-### Shortcut Trait
-
-```rust
-pub trait Shortcut: Default {  // Default bound required
-    fn get_plugins(&self, params: &HashMap<String, Value>) -> Vec<Arc<dyn Plugin>>;
-}
-```
-
-## Testing
-
-- 59 tests across 7 files
-- Use `wiremock` for HTTP mocking in integration tests
-- `#[tokio::test]` for async tests
-- Tests in `tests/` directory, not inline
-
-### Test Files
-
-| File | Coverage |
-|------|----------|
-| `artful_test.rs` | Artful methods, HTTP errors, plugin error propagation |
-| `direction_test.rs` | DirectionKind, Destination, custom Direction |
-| `flow_ctrl_test.rs` | FlowCtrl::cease, skip_rest, empty chain |
-| `rocket_test.rs` | Rocket convenience methods, RocketConfig |
-| `integration_test.rs` | Full pipeline tests |
-| `packer_test.rs` | JsonPacker pack/unpack |
-| `shortcut_test.rs` | Shortcut trait |
-
-## Gotchas
-
-1. **Crate name vs struct name**: Crate is `artisan`, main struct is `Artful`
-   ```rust
-   use artisan::Artful;  // Correct
-   ```
-
-2. **Plugin error propagation**: Use `?` after `next.call(rocket).await`
-   ```rust
-   next.call(rocket).await?;  // Required - not just .await
-   ```
-
-3. **DirectionKind enum**: `Json`, `Response`, `NoRequest`, `Custom`
-
-4. **Rocket params vs payload**: `params` immutable, `payload` mutable by plugins
-
-5. **No binary**: Library crate only, examples for demo
-
-6. **CI triggers**: Push to `main` or PR; publish on `v*` tag
 
 ## References
 
+- **Implementation details**: [artisan-http/AGENTS.md](artisan-http/AGENTS.md)
 - Architecture: `docs/ARCHITECTURE.md` (comprehensive)
-- Examples: `examples/*.rs` (5 working demos)
+- Examples: `artisan-http/examples/*.rs` (5 working demos)
 - CI: `.github/workflows/coding-linter.yml`, `.github/workflows/publish.yml`
