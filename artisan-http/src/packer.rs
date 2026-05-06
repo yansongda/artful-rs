@@ -11,6 +11,9 @@ use std::collections::HashMap;
 
 use crate::Result;
 
+/// 序列化器 trait
+///
+/// 定义数据序列化/反序列化的抽象接口，用于将 payload 与请求体互转。
 pub trait Packer: Send + Sync + std::fmt::Debug {
     /// 序列化数据
     ///

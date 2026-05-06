@@ -6,7 +6,7 @@
 //!
 //! | 插件 | 功能 |
 //! |------|------|
-//! | [`StartPlugin`] | 初始化（占位） |
+//! | [`StartPlugin`] | 将原始参数初始化到 payload |
 //! | [`AddPayloadBodyPlugin`] | 将 payload 序列化为请求体 |
 //! | [`AddRadarPlugin`] | 构建 HTTP Request |
 //! | [`ParserPlugin`] | 执行请求并解析响应 |
