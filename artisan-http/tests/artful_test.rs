@@ -1,8 +1,8 @@
-use artisan::FlowCtrl;
-use artisan::Rocket;
-use artisan::direction::{Destination, DirectionKind};
-use artisan::plugins::{AddRadarPlugin, ParserPlugin, StartPlugin};
-use artisan::{Artful, ArtfulError, Plugin, flow_ctrl::Next};
+use artisan_http::FlowCtrl;
+use artisan_http::Rocket;
+use artisan_http::direction::{Destination, DirectionKind};
+use artisan_http::plugins::{AddRadarPlugin, ParserPlugin, StartPlugin};
+use artisan_http::{Artful, ArtfulError, Plugin, flow_ctrl::Next};
 use async_trait::async_trait;
 use serde_json::json;
 use std::collections::HashMap;
@@ -19,7 +19,7 @@ struct MethodUrlPlugin {
 
 #[async_trait]
 impl Plugin for MethodUrlPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan_http::Result<()> {
         rocket.config.method = self.method.clone();
         rocket.config.url = self.url.clone();
         next.call(rocket).await
@@ -102,7 +102,7 @@ async fn test_artful_raw_success() {
         .mount(&mock_server)
         .await;
 
-    let client = artisan::get_client();
+    let client = artisan_http::get_client();
     let request = client.get(mock_server.uri() + "/raw-test").build().unwrap();
 
     let response = Artful::raw(request).await.unwrap();
@@ -120,7 +120,7 @@ async fn test_artful_raw_with_headers() {
         .mount(&mock_server)
         .await;
 
-    let client = artisan::get_client();
+    let client = artisan_http::get_client();
     let request = client
         .post(mock_server.uri() + "/headers-test")
         .header("X-Custom", "test-value")
@@ -141,7 +141,7 @@ async fn test_plugin_error_propagation() {
 
     #[async_trait]
     impl Plugin for ErrorPlugin {
-        async fn assembly(&self, _rocket: &mut Rocket, _next: Next<'_>) -> artisan::Result<()> {
+        async fn assembly(&self, _rocket: &mut Rocket, _next: Next<'_>) -> artisan_http::Result<()> {
             Err(ArtfulError::PluginExecutionError {
                 plugin_name: "ErrorPlugin".to_string(),
                 message: self.message.clone(),
@@ -154,7 +154,7 @@ async fn test_plugin_error_propagation() {
 
     #[async_trait]
     impl Plugin for SuccessPlugin {
-        async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
+        async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan_http::Result<()> {
             rocket.payload.insert("success".to_string(), json!(true));
             next.call(rocket).await
         }
@@ -183,7 +183,7 @@ async fn test_plugin_chain_stops_on_error() {
 
     #[async_trait]
     impl Plugin for FirstPlugin {
-        async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
+        async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan_http::Result<()> {
             rocket.payload.insert("first".to_string(), json!(1));
             next.call(rocket).await
         }
@@ -191,14 +191,14 @@ async fn test_plugin_chain_stops_on_error() {
 
     #[async_trait]
     impl Plugin for FailingPlugin {
-        async fn assembly(&self, _rocket: &mut Rocket, _next: Next<'_>) -> artisan::Result<()> {
+        async fn assembly(&self, _rocket: &mut Rocket, _next: Next<'_>) -> artisan_http::Result<()> {
             Err(ArtfulError::Other("plugin failed".to_string()))
         }
     }
 
     #[async_trait]
     impl Plugin for NeverRunPlugin {
-        async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
+        async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan_http::Result<()> {
             rocket.payload.insert("never_run".to_string(), json!(true));
             next.call(rocket).await
         }
@@ -303,7 +303,7 @@ async fn test_http_timeout_response() {
 
     #[async_trait]
     impl Plugin for TimeoutUrlPlugin {
-        async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
+        async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan_http::Result<()> {
             rocket.config.method = reqwest::Method::GET;
             rocket.config.url = self.url.clone();
             rocket.config.http.timeout = Some(self.timeout);

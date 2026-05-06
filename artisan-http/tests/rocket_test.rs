@@ -1,4 +1,4 @@
-use artisan::{HttpOptions, Rocket, RocketConfig};
+use artisan_http::{HttpOptions, Rocket, RocketConfig};
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -193,7 +193,7 @@ fn test_http_options_pool_settings() {
 
 #[test]
 fn test_rocket_config_direction_default() {
-    use artisan::DirectionKind;
+    use artisan_http::DirectionKind;
 
     let config = RocketConfig::default();
     assert!(matches!(config.direction, DirectionKind::Json));
@@ -201,7 +201,7 @@ fn test_rocket_config_direction_default() {
 
 #[test]
 fn test_rocket_config_custom_direction() {
-    use artisan::DirectionKind;
+    use artisan_http::DirectionKind;
 
     let config = RocketConfig {
         direction: DirectionKind::Response,

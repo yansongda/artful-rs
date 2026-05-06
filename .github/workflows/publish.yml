@@ -3,16 +3,18 @@ name: publish
 on:
   push:
     tags:
-      - v*
+      - 'artisan-http/v*'
+      - 'artisan/v*'
 
 env:
   CARGO_TERM_COLOR: always
   CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}
 
 jobs:
-  publish:
-    name: Publish
+  publish-artisan-http:
+    name: Publish artisan-http
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/artisan-http/')
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -35,5 +37,35 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-      - name: Publish
-        run: cargo publish --token $CARGO_TOKEN
+      - name: Publish artisan-http
+        run: cargo publish -p artisan-http --token $CARGO_TOKEN
+
+  publish-artisan:
+    name: Publish artisan
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/artisan/')
+    needs: publish-artisan-http
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Cargo generate lockfile
+        run: |
+          cargo generate-lockfile
+      - name: Cache crates
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      - name: Publish artisan
+        run: cargo publish -p artisan --token $CARGO_TOKEN

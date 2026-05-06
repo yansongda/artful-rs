@@ -60,7 +60,7 @@ jobs:
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
       - name: Run cargo clippy
-        run: cargo clippy -- -D warnings
+        run: cargo clippy --workspace -- -D warnings
 
   test:
     name: Test
@@ -85,4 +85,4 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
       - name: Run cargo test
-        run: cargo test --all-features
+        run: cargo test --workspace --all-features

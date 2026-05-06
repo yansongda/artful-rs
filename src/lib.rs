@@ -9,30 +9,56 @@
 //! - [`FlowCtrl`] - 流向控制器，管理插件执行顺序
 //! - [`Artful`] - 框架主入口
 
-pub mod direction;
-pub mod directions;
-pub mod error;
-pub use directions::JsonDirection;
-pub mod artisan;
-pub mod config;
-pub mod flow_ctrl;
-pub mod http;
-pub mod packer;
-pub mod packers;
-pub mod plugin;
-pub mod plugins;
-pub mod rocket;
-pub mod shortcut;
+#[cfg(feature = "http")]
+pub use artisan_http::direction;
+#[cfg(feature = "http")]
+pub use artisan_http::directions;
+#[cfg(feature = "http")]
+pub use artisan_http::error;
+#[cfg(feature = "http")]
+pub use artisan_http::directions::JsonDirection;
+#[cfg(feature = "http")]
+pub use artisan_http::artisan;
+#[cfg(feature = "http")]
+pub use artisan_http::config;
+#[cfg(feature = "http")]
+pub use artisan_http::flow_ctrl;
+#[cfg(feature = "http")]
+pub use artisan_http::http;
+#[cfg(feature = "http")]
+pub use artisan_http::packer;
+#[cfg(feature = "http")]
+pub use artisan_http::packers;
+#[cfg(feature = "http")]
+pub use artisan_http::plugin;
+#[cfg(feature = "http")]
+pub use artisan_http::plugins;
+#[cfg(feature = "http")]
+pub use artisan_http::rocket;
+#[cfg(feature = "http")]
+pub use artisan_http::shortcut;
 
-pub use artisan::Artful;
-pub use config::Config;
-pub use direction::{Destination, Direction, DirectionKind};
-pub use error::{ArtfulError, Result};
-pub use flow_ctrl::{FlowCtrl, Next};
-pub use http::get_client;
-pub use packer::Packer;
-pub use packers::JsonPacker;
-pub use plugin::Plugin;
-pub use plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
-pub use rocket::{HttpOptions, Rocket, RocketConfig};
-pub use shortcut::Shortcut;
+#[cfg(feature = "http")]
+pub use artisan_http::artisan::Artful;
+#[cfg(feature = "http")]
+pub use artisan_http::config::Config;
+#[cfg(feature = "http")]
+pub use artisan_http::direction::{Destination, Direction, DirectionKind};
+#[cfg(feature = "http")]
+pub use artisan_http::error::{ArtfulError, Result};
+#[cfg(feature = "http")]
+pub use artisan_http::flow_ctrl::{FlowCtrl, Next};
+#[cfg(feature = "http")]
+pub use artisan_http::http::get_client;
+#[cfg(feature = "http")]
+pub use artisan_http::packer::Packer;
+#[cfg(feature = "http")]
+pub use artisan_http::packers::JsonPacker;
+#[cfg(feature = "http")]
+pub use artisan_http::plugin::Plugin;
+#[cfg(feature = "http")]
+pub use artisan_http::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
+#[cfg(feature = "http")]
+pub use artisan_http::rocket::{HttpOptions, Rocket, RocketConfig};
+#[cfg(feature = "http")]
+pub use artisan_http::shortcut::Shortcut;
