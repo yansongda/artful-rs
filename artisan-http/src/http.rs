@@ -12,12 +12,12 @@
 use std::sync::OnceLock;
 use std::time::Duration;
 
-use crate::artisan::Artful;
+use crate::artful::Artful;
 use crate::rocket::HttpOptions;
 
 const DEFAULT_POOL_IDLE_TIMEOUT: u64 = 90;
 const DEFAULT_POOL_MAX_IDLE_PER_HOST: usize = 20;
-const DEFAULT_USER_AGENT: &str = concat!("yansongda/artful-rs:", env!("CARGO_PKG_VERSION"));
+const DEFAULT_USER_AGENT: &str = concat!("yansongda/artisan-http:", env!("CARGO_PKG_VERSION"));
 
 pub fn get_client() -> &'static reqwest::Client {
     static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
