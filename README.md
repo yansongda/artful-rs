@@ -36,15 +36,15 @@ cargo add artisan --no-default-features
 ```toml
 # Cargo.toml
 [dependencies]
-artisan = "~0.13.0"
+artisan = "~0.13.1"
 
 # 直接依赖实现层
 [dependencies]
-artisan-http = "~0.13.0"
+artisan-http = "~0.13.1"
 
 # 纯 facade（禁用 HTTP 功能）
 [dependencies]
-artisan = { version = "~0.13.0", default-features = false }
+artisan = { version = "~0.13.1", default-features = false }
 ```
 
 ## 快速入口

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > 本文件仅记录 artisan facade 相关变更，各子 crate 变更详见各自目录下的 CHANGELOG.md
 
+## [0.13.1] - 2026-05-06
+
+### Changed
+
+- 移除冗余的 docs.rs 配置和 `doc(cfg)` 属性
+  ([5bee973](https://github.com/yansongda/artisan/commit/5bee973))
+- 完善文档注释，清理依赖
+  ([f622f7c](https://github.com/yansongda/artisan/commit/f622f7c))
+
 ## [0.13.0] - 2026-05-06
 
 ### Changed
