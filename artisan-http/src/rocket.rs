@@ -22,6 +22,9 @@ use crate::direction::DirectionKind;
 use crate::packer::Packer;
 use crate::packers::JsonPacker;
 
+/// HTTP 请求配置
+///
+/// 所有字段可在插件中动态修改。
 #[derive(Debug, Clone)]
 pub struct RocketConfig {
     pub method: reqwest::Method,
@@ -45,6 +48,9 @@ impl Default for RocketConfig {
     }
 }
 
+/// HTTP 连接选项
+///
+/// 未设置的字段使用 reqwest 默认值或框架默认值。
 #[derive(Debug, Clone, Copy, Default)]
 pub struct HttpOptions {
     /// 请求超时（秒）
@@ -63,6 +69,10 @@ pub struct HttpOptions {
     pub user_agent: Option<&'static str>,
 }
 
+/// 请求载体
+///
+/// 贯穿整个插件链，携带请求参数、HTTP 配置、请求对象和响应数据。
+/// 插件通过修改 `payload`、`config` 等字段来组装请求。
 pub struct Rocket {
     /// 原始参数（不变）
     params: HashMap<String, Value>,
