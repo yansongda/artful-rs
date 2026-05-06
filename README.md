@@ -12,20 +12,54 @@
 - ⚡ **高性能**: 全局 HTTP Client 单例，共享连接池
 - 📦 **模块化**: Workspace 架构，HTTP 功能可选
 
+## 架构
+
+```
+┌─────────────────────────────────────┐
+│           artisan (facade)          │  ← 用户依赖这一层
+│         Feature-controlled          │
+│            re-export                │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│         artisan-http                │  ← 实现层
+│    HTTP Client + Onion Model        │
+│      Plugin System + Types          │
+└─────────────────────────────────────┘
+```
+
+### Crate 说明
+
+| Crate | 角色 | 说明 |
+|-------|------|------|
+| `artisan` | Facade | Feature 控制的 re-export，默认包含 HTTP 功能 |
+| `artisan-http` | 实现 | HTTP 客户端、洋葱模型、插件系统 |
+
 ## 安装
+
+### 推荐方式（通过 facade）
 
 ```toml
 # 默认包含 HTTP 功能
 [dependencies]
 artisan = "0.12"
+```
 
-# 禁用 HTTP 功能（纯 facade）
-[dependencies]
-artisan = { version = "0.12", default-features = false }
+### 直接依赖实现层
 
-# 直接依赖 HTTP 实现
+```toml
+# 直接使用 HTTP 实现
 [dependencies]
 artisan-http = "0.1"
+```
+
+### 禁用 HTTP 功能
+
+```toml
+# 纯 facade，不包含 HTTP 实现
+[dependencies]
+artisan = { version = "0.12", default-features = false }
 ```
 
 ## 快速开始
@@ -70,6 +104,20 @@ cargo run -p artisan-http --example config
 cargo run -p artisan-http --example shortcut
 cargo run -p artisan-http --example custom_plugin
 cargo run -p artisan-http --example direction
+```
+
+## Workspace 结构
+
+```
+artisan/                    # 根目录（facade crate）
+├── Cargo.toml              # Workspace 配置
+├── src/lib.rs              # Feature 控制的 re-export
+└── artisan-http/           # HTTP 实现 crate
+    ├── Cargo.toml
+    ├── src/                # 所有实现代码
+    ├── tests/              # 所有测试（59 个）
+    ├── examples/           # 所有示例
+    └── docs/               # 架构文档
 ```
 
 ## 文档
