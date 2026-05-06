@@ -1,9 +1,5 @@
 # Artisan
 
-> Api RequesT Framework U Like - 你喜欢的 Rust API 请求框架
-
-基于洋葱模型的 Rust HTTP 客户端框架，灵感来自 [yansongda/artful](https://github.com/yansongda/artful)。
-
 ## Workspace 结构
 
 ```
@@ -19,10 +15,10 @@ artisan/
 
 ## Crate 说明
 
-| Crate | 版本 | 职责 |
-|-------|------|------|
-| [`artisan`](.) | 0.11.0 | Facade，Feature 控制的 re-export |
-| [`artisan-http`](./artisan-http) | 0.12.0 | HTTP 客户端、洋葱模型、插件系统 |
+| Crate | 版本 | 职责 | 文档 |
+|-------|------|------|------|
+| [`artisan`](.) | 0.12.0 | Facade，Feature 控制的 re-export | [docs.rs/artisan](https://docs.rs/artisan) |
+| [`artisan-http`](./artisan-http) | 0.12.0 | HTTP 客户端、洋葱模型、插件系统 | [README](./artisan-http/README.md) |
 
 ## 安装
 
@@ -42,11 +38,15 @@ artisan = { version = "0.12", default-features = false }
 
 ## 快速入口
 
-- **快速开始**: [artisan-http/README.md](./artisan-http/README.md#快速开始)
-- **架构设计**: [artisan-http/docs/ARCHITECTURE.md](./artisan-http/docs/ARCHITECTURE.md)
-- **API 文档**: [docs.rs/artisan](https://docs.rs/artisan)
+### artisan-http
+
+- **快速开始**: [README](./artisan-http/README.md#快速开始)
+- **架构设计**: [docs/ARCHITECTURE.md](./artisan-http/docs/ARCHITECTURE.md)
+- **示例代码**: [examples/](./artisan-http/examples/)
 
 ## 示例
+
+### artisan-http
 
 ```bash
 cargo run -p artisan-http --example basic
