@@ -1,0 +1,235 @@
+# artisan-http
+
+> Api RequesT Framework U Like - 你喜欢的 Rust API 请求框架
+
+基于洋葱模型的 Rust HTTP 客户端框架，灵感来自 [yansongda/artful](https://github.com/yansongda/artful)。
+
+## 特性
+
+- 🔄 **洋葱模型**: 请求层层穿透，响应层层返回
+- 🔌 **插件化**: 每个请求都是一个插件组合，高度灵活可定制
+- 🛡️ **类型安全**: Rust 类型系统确保配置和参数的类型安全
+- ⚡ **高性能**: 全局 HTTP Client 单例，共享连接池
+
+## 安装
+
+```toml
+[dependencies]
+artisan-http = "0.1"
+```
+
+## 快速开始
+
+### 基础使用
+
+```rust
+use artisan_http::{Artful, Plugin, Rocket, flow_ctrl::Next};
+use artisan_http::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use async_trait::async_trait;
+use std::sync::Arc;
+use std::collections::HashMap;
+use serde_json::json;
+
+struct MethodUrlPlugin {
+    method: reqwest::Method,
+    url: String,
+}
+
+#[async_trait]
+impl Plugin for MethodUrlPlugin {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan_http::Result<()> {
+        rocket.config.method = self.method.clone();
+        rocket.config.url = self.url.clone();
+        next.call(rocket).await
+    }
+}
+
+#[tokio::main]
+async fn main() -> artisan_http::Result<()> {
+    let params = HashMap::from([
+        ("order_id".to_string(), json!("123")),
+        ("amount".to_string(), json!(100)),
+    ]);
+
+    let plugins: Vec<Arc<dyn artisan_http::Plugin>> = vec![
+        Arc::new(StartPlugin),
+        Arc::new(MethodUrlPlugin {
+            method: reqwest::Method::POST,
+            url: "https://api.example.com/orders".to_string(),
+        }),
+        Arc::new(AddPayloadBodyPlugin),
+        Arc::new(AddRadarPlugin),
+        Arc::new(ParserPlugin),
+    ];
+
+    let result = Artful::artful(params, plugins).await?;
+    
+    if let artisan_http::Destination::Json(json) = result {
+        println!("Response: {}", json);
+    }
+
+    Ok(())
+}
+```
+
+### 使用 Shortcut 快捷方式
+
+```rust
+use artisan_http::{Artful, Shortcut, Plugin};
+use artisan_http::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use std::sync::Arc;
+use std::collections::HashMap;
+
+#[derive(Default)]
+struct MyApiShortcut {
+    method: reqwest::Method,
+    url: String,
+}
+
+impl Shortcut for MyApiShortcut {
+    fn get_plugins(&self, _params: &HashMap<String, serde_json::Value>) 
+        -> Vec<Arc<dyn Plugin>> 
+    {
+        vec![
+            Arc::new(StartPlugin),
+            Arc::new(MethodUrlPlugin {
+                method: self.method.clone(),
+                url: self.url.clone(),
+            }),
+            Arc::new(AddPayloadBodyPlugin),
+            Arc::new(AddRadarPlugin),
+            Arc::new(ParserPlugin),
+        ]
+    }
+}
+
+let shortcut = MyApiShortcut {
+    method: reqwest::Method::POST,
+    url: "https://api.example.com/orders".to_string(),
+};
+let result = Artful::shortcut(shortcut, HashMap::new()).await?;
+```
+
+### 自定义插件
+
+```rust
+use artisan_http::{Plugin, Rocket, flow_ctrl::Next};
+use async_trait::async_trait;
+
+pub struct SignaturePlugin {
+    api_key: String,
+}
+
+#[async_trait]
+impl Plugin for SignaturePlugin {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan_http::Result<()> {
+        rocket.config.headers.insert(
+            "X-Signature".to_string(),
+            sign(&self.api_key, &rocket.payload),
+        );
+        
+        next.call(rocket).await
+    }
+}
+```
+
+**错误处理**: 插件返回 `Result<()>`，任一插件失败会终止整个链并传播错误。
+
+## 核心概念
+
+### Rocket - 请求载体
+
+`Rocket` 是整个请求生命周期中的数据载体：
+
+```rust
+pub struct Rocket {
+    params: HashMap<String, Value>,   // 原始参数（不变）
+    pub payload: HashMap<String, Value>, // 业务参数（可修改）
+    pub config: RocketConfig,         // HTTP 配置（可修改）
+    pub radar: Option<Request>,       // HTTP 请求对象
+    pub destination: Option<Destination>, // 解析结果
+    pub packer: Arc<dyn Packer>,      // 序列化器
+}
+```
+
+**设计说明**：
+- `params`: 原始参数，由调用方传入，整个生命周期中保持不变
+- `payload`: 业务参数，由 `StartPlugin` 从 `params` 初始化，后续插件可修改
+- `config`: HTTP 配置，包含 `direction`（响应解析策略），由插件负责设置
+
+### RocketConfig - 请求配置
+
+```rust
+pub struct RocketConfig {
+    pub method: reqwest::Method,
+    pub url: String,
+    pub headers: HashMap<String, String>,
+    pub body: Option<String>,
+    pub http: HttpOptions,
+    pub direction: DirectionKind,     // 响应解析策略
+}
+```
+
+### Plugin - 插件（洋葱模型）
+
+插件是洋葱模型的核心，每个插件可以在请求前向和后向阶段执行操作：
+
+```rust
+#[async_trait]
+pub trait Plugin: Send + Sync + 'static {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> Result<()>;
+}
+```
+
+执行流程：
+```
+请求 → Plugin1 前向 → Plugin2 前向 → Plugin3 前向 → HTTP 请求
+响应 ← Plugin1 后向 ← Plugin2 后向 ← Plugin3 后向 ← HTTP 响应
+```
+
+### Direction - 响应解析策略
+
+```rust
+pub enum DirectionKind {
+    Json,             // 解析为 JSON（默认）
+    Response,         // 返回原始 Response
+    NoRequest,        // 不发起 HTTP 请求
+    Custom(Arc<dyn Direction>), // 自定义解析器
+}
+```
+
+## 内置插件
+
+| 插件 | 功能 |
+|------|------|
+| `StartPlugin` | 将 params 初始化到 payload |
+| `AddPayloadBodyPlugin` | 将 payload 序列化为请求体 |
+| `AddRadarPlugin` | 构建 HTTP Request |
+| `ParserPlugin` | 执行请求并解析响应 |
+
+## 示例
+
+```bash
+# 运行示例
+cargo run -p artisan-http --example basic
+cargo run -p artisan-http --example config
+cargo run -p artisan-http --example shortcut
+cargo run -p artisan-http --example custom_plugin
+cargo run -p artisan-http --example direction
+```
+
+## 测试
+
+```bash
+# 运行所有测试（59 个）
+cargo test -p artisan-http --all-features
+```
+
+## 文档
+
+- 详细架构设计：[docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)
+- 项目说明：[AGENTS.md](AGENTS.md)
+
+## 许可证
+
+MIT License

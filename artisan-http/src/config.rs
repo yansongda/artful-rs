@@ -18,7 +18,7 @@ pub struct Config {
     /// # 示例
     ///
     /// ```rust
-    /// use artisan::Config;
+    /// use artisan_http::Config;
     /// use serde_json::json;
     /// use std::collections::HashMap;
     ///

@@ -1,5 +1,5 @@
-use artisan::Rocket;
-use artisan::direction::{Destination, Direction, DirectionKind};
+use artisan_http::Rocket;
+use artisan_http::direction::{Destination, Direction, DirectionKind};
 use async_trait::async_trait;
 use serde_json::json;
 use std::sync::Arc;
@@ -50,15 +50,15 @@ struct CustomJsonDirection {
 
 #[async_trait]
 impl Direction for CustomJsonDirection {
-    async fn parse(&self, rocket: &mut Rocket) -> artisan::Result<Destination> {
+    async fn parse(&self, rocket: &mut Rocket) -> artisan_http::Result<Destination> {
         match rocket.destination_origin.take() {
             Some(response) => {
                 let text = response
                     .text()
                     .await
-                    .map_err(artisan::ArtfulError::RequestFailed)?;
+                    .map_err(artisan_http::ArtfulError::RequestFailed)?;
                 let mut json: serde_json::Value = serde_json::from_str(&text).map_err(|e| {
-                    artisan::ArtfulError::JsonDeserializeError {
+                    artisan_http::ArtfulError::JsonDeserializeError {
                         message: e.to_string(),
                         source: Some(e),
                     }
@@ -68,7 +68,7 @@ impl Direction for CustomJsonDirection {
                 }
                 Ok(Destination::Json(json))
             }
-            None => Err(artisan::ArtfulError::MissingResponse),
+            None => Err(artisan_http::ArtfulError::MissingResponse),
         }
     }
 }
@@ -87,16 +87,16 @@ struct TextDirection;
 
 #[async_trait]
 impl Direction for TextDirection {
-    async fn parse(&self, rocket: &mut Rocket) -> artisan::Result<Destination> {
+    async fn parse(&self, rocket: &mut Rocket) -> artisan_http::Result<Destination> {
         match rocket.destination_origin.take() {
             Some(response) => {
                 let text = response
                     .text()
                     .await
-                    .map_err(artisan::ArtfulError::RequestFailed)?;
+                    .map_err(artisan_http::ArtfulError::RequestFailed)?;
                 Ok(Destination::Json(json!({ "text": text })))
             }
-            None => Err(artisan::ArtfulError::MissingResponse),
+            None => Err(artisan_http::ArtfulError::MissingResponse),
         }
     }
 }
@@ -120,8 +120,8 @@ struct FailingDirection;
 
 #[async_trait]
 impl Direction for FailingDirection {
-    async fn parse(&self, _rocket: &mut Rocket) -> artisan::Result<Destination> {
-        Err(artisan::ArtfulError::DirectionParseError(
+    async fn parse(&self, _rocket: &mut Rocket) -> artisan_http::Result<Destination> {
+        Err(artisan_http::ArtfulError::DirectionParseError(
             "Custom parse failed".to_string(),
         ))
     }

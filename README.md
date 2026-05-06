@@ -1,228 +1,60 @@
 # Artisan
 
-> Api RequesT Framework U Like - 你喜欢的 Rust API 请求框架
+## Workspace 结构
 
-基于洋葱模型的 Rust HTTP 客户端框架，灵感来自 [yansongda/artful](https://github.com/yansongda/artful)。
+```
+artisan/
+├── Cargo.toml              # Workspace 配置
+├── src/lib.rs              # Facade（Feature 控制的 re-export）
+└── artisan-http/           # HTTP 实现
+    ├── src/                # 核心实现
+    ├── tests/              # 测试（59 个）
+    ├── examples/           # 示例
+    └── docs/               # 架构文档
+```
 
-## 特性
+## Crate 说明
 
-- 🔄 **洋葱模型**: 请求层层穿透，响应层层返回
-- 🔌 **插件化**: 每个请求都是一个插件组合，高度灵活可定制
-- 🛡️ **类型安全**: Rust 类型系统确保配置和参数的类型安全
-- ⚡ **高性能**: 全局 HTTP Client 单例，共享连接池
-- 📦 **零依赖冲突**: 仅使用主流稳定依赖
+| Crate | 版本 | 职责 | 文档 |
+|-------|------|------|------|
+| [`artisan`](.) | 0.12.0 | Facade，Feature 控制的 re-export | [docs.rs/artisan](https://docs.rs/artisan) |
+| [`artisan-http`](./artisan-http) | 0.12.0 | HTTP 客户端、洋葱模型、插件系统 | [README](./artisan-http/README.md) |
 
 ## 安装
 
 ```toml
+# 推荐：通过 facade（默认包含 HTTP 功能）
 [dependencies]
-artisan = "~0.11"
+artisan = "0.12"
+
+# 直接依赖实现层
+[dependencies]
+artisan-http = "0.1"
+
+# 纯 facade（禁用 HTTP 功能）
+[dependencies]
+artisan = { version = "0.12", default-features = false }
 ```
 
-> 使用 `~` 版本符号确保依赖兼容性，`~0.11` 表示兼容 0.11.x 的所有版本。
+## 快速入口
 
-## 快速开始
+### artisan-http
 
-### 初始化框架
+- **快速开始**: [README](./artisan-http/README.md#快速开始)
+- **架构设计**: [docs/ARCHITECTURE.md](./artisan-http/docs/ARCHITECTURE.md)
+- **示例代码**: [examples/](./artisan-http/examples/)
 
-```rust
-use artisan::{Artful, Config};
+## 示例
 
-// 初始化框架配置（可选）
-// 首次调用成功返回 true，后续调用返回 false（OnceLock 不支持覆盖）
-Artful::config(Config::default());
+### artisan-http
+
+```bash
+cargo run -p artisan-http --example basic
+cargo run -p artisan-http --example config
+cargo run -p artisan-http --example shortcut
+cargo run -p artisan-http --example custom_plugin
+cargo run -p artisan-http --example direction
 ```
-
-### 基础使用
-
-```rust
-use artisan::{Artful, Plugin, Rocket, flow_ctrl::Next};
-use artisan::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
-use async_trait::async_trait;
-use std::sync::Arc;
-use std::collections::HashMap;
-use serde_json::json;
-
-struct MethodUrlPlugin {
-    method: reqwest::Method,
-    url: String,
-}
-
-#[async_trait]
-impl Plugin for MethodUrlPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
-        rocket.config.method = self.method.clone();
-        rocket.config.url = self.url.clone();
-        next.call(rocket).await
-    }
-}
-
-#[tokio::main]
-async fn main() -> artisan::Result<()> {
-    let params = HashMap::from([
-        ("order_id", json!("123")),
-        ("amount", json!(100)),
-    ]);
-
-    let plugins: Vec<Arc<dyn artisan::Plugin>> = vec![
-        Arc::new(StartPlugin),
-        Arc::new(MethodUrlPlugin {
-            method: reqwest::Method::POST,
-            url: "https://api.example.com/orders".to_string(),
-        }),
-        Arc::new(AddPayloadBodyPlugin),
-        Arc::new(AddRadarPlugin),
-        Arc::new(ParserPlugin),
-    ];
-
-    let result = Artful::artful(params, plugins).await?;
-    
-    if let artisan::Destination::Json(json) = result {
-        println!("Response: {}", json);
-    }
-
-    Ok(())
-}
-```
-
-### 使用 Shortcut 快捷方式
-
-```rust
-use artisan::{Artful, Shortcut, Plugin};
-use artisan::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
-use std::sync::Arc;
-use std::collections::HashMap;
-
-#[derive(Default)]
-struct MyApiShortcut {
-    method: reqwest::Method,
-    url: String,
-}
-
-impl Shortcut for MyApiShortcut {
-    fn get_plugins(&self, _params: &HashMap<String, serde_json::Value>) 
-        -> Vec<Arc<dyn Plugin>> 
-    {
-        vec![
-            Arc::new(StartPlugin),
-            Arc::new(MethodUrlPlugin {
-                method: self.method.clone(),
-                url: self.url.clone(),
-            }),
-            Arc::new(AddPayloadBodyPlugin),
-            Arc::new(AddRadarPlugin),
-            Arc::new(ParserPlugin),
-        ]
-    }
-}
-
-let shortcut = MyApiShortcut {
-    method: reqwest::Method::POST,
-    url: "https://api.example.com/orders".to_string(),
-};
-let result = Artful::shortcut(shortcut, HashMap::new()).await?;
-```
-
-### 自定义插件
-
-```rust
-use artisan::{Plugin, Rocket, flow_ctrl::Next};
-use async_trait::async_trait;
-
-pub struct SignaturePlugin {
-    api_key: String,
-}
-
-#[async_trait]
-impl Plugin for SignaturePlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
-        rocket.config.headers.insert(
-            "X-Signature".to_string(),
-            sign(&self.api_key, &rocket.payload),
-        );
-        
-        next.call(rocket).await
-    }
-}
-```
-
-**错误处理**: 插件返回 `Result<()>`，任一插件失败会终止整个链并传播错误。
-
-## 核心概念
-
-### Rocket - 请求载体
-
-`Rocket` 是整个请求生命周期中的数据载体：
-
-```rust
-pub struct Rocket {
-    params: HashMap<String, Value>,   // 原始参数（不变）
-    pub payload: HashMap<String, Value>, // 业务参数（可修改）
-    pub config: RocketConfig,         // HTTP 配置（可修改）
-    pub radar: Option<Request>,       // HTTP 请求对象
-    pub destination: Option<Destination>, // 解析结果
-    pub packer: Arc<dyn Packer>,      // 序列化器
-}
-```
-
-**设计说明**：
-- `params`: 原始参数，由调用方传入，整个生命周期中保持不变
-- `payload`: 业务参数，由 `StartPlugin` 从 `params` 初始化，后续插件可修改
-- `config`: HTTP 配置，包含 `direction`（响应解析策略），由插件负责设置
-
-### RocketConfig - 请求配置
-
-```rust
-pub struct RocketConfig {
-    pub method: reqwest::Method,
-    pub url: String,
-    pub headers: HashMap<String, String>,
-    pub body: Option<String>,
-    pub http: HttpOptions,
-    pub direction: DirectionKind,     // 响应解析策略
-}
-```
-
-### Plugin - 插件（洋葱模型）
-
-插件是洋葱模型的核心，每个插件可以在请求前向和后向阶段执行操作：
-
-```rust
-#[async_trait]
-pub trait Plugin: Send + Sync + 'static {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> Result<()>;
-}
-```
-
-执行流程：
-```
-请求 → Plugin1 前向 → Plugin2 前向 → Plugin3 前向 → HTTP 请求
-响应 ← Plugin1 后向 ← Plugin2 后向 ← Plugin3 后向 ← HTTP 响应
-```
-
-### Direction - 响应解析策略
-
-```rust
-pub enum DirectionKind {
-    Json,             // 解析为 JSON（默认）
-    Response,         // 返回原始 Response
-    NoRequest,        // 不发起 HTTP 请求
-    Custom(Arc<dyn Direction>), // 自定义解析器
-}
-```
-
-## 内置插件
-
-| 插件 | 功能 |
-|------|------|
-| `StartPlugin` | 将 params 初始化到 payload |
-| `AddPayloadBodyPlugin` | 将 payload 序列化为请求体 |
-| `AddRadarPlugin` | 构建 HTTP Request |
-| `ParserPlugin` | 执行请求并解析响应 |
-
-## 文档
-
-详细架构设计请参阅 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
 
 ## 许可证
 

@@ -1,7 +1,7 @@
 //! Shortcut 快捷方式示例
 
-use artisan::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
-use artisan::{Artful, Plugin, Rocket, Shortcut, flow_ctrl::Next};
+use artisan_http::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
+use artisan_http::{Artful, Plugin, Rocket, Shortcut, flow_ctrl::Next};
 use async_trait::async_trait;
 use serde_json::json;
 use std::collections::HashMap;
@@ -15,7 +15,7 @@ struct MethodUrlPlugin {
 
 #[async_trait]
 impl Plugin for MethodUrlPlugin {
-    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan::Result<()> {
+    async fn assembly(&self, rocket: &mut Rocket, next: Next<'_>) -> artisan_http::Result<()> {
         rocket.config.method = self.method.clone();
         rocket.config.url = self.url.clone();
         next.call(rocket).await
@@ -60,21 +60,21 @@ impl Shortcut for HttpbinGetShortcut {
 }
 
 #[tokio::main]
-async fn main() -> artisan::Result<()> {
+async fn main() -> artisan_http::Result<()> {
     // 使用 POST 快捷方式
     let mut params = HashMap::new();
     params.insert("data".to_string(), json!("hello world"));
 
     let result = Artful::shortcut(HttpbinPostShortcut::default(), params).await?;
 
-    if let artisan::Destination::Json(json) = result {
+    if let artisan_http::Destination::Json(json) = result {
         println!("POST Response: {}", json);
     }
 
     // 使用 GET 快捷方式
     let result = Artful::shortcut(HttpbinGetShortcut::default(), HashMap::new()).await?;
 
-    if let artisan::Destination::Json(json) = result {
+    if let artisan_http::Destination::Json(json) = result {
         println!("GET Response: {}", json);
     }
 
