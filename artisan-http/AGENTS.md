@@ -4,7 +4,6 @@
 
 **artisan-http** - HTTP implementation crate for artisan framework.
 
-- Version: 0.12.0
 - Edition: 2024
 - MSRV: 1.85
 - License: MIT

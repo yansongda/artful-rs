@@ -15,25 +15,36 @@ artisan/
 
 ## Crate 说明
 
-| Crate | 版本 | 职责 | 文档 |
-|-------|------|------|------|
-| [`artisan`](.) | 0.12.0 | Facade，Feature 控制的 re-export | [docs.rs/artisan](https://docs.rs/artisan) |
-| [`artisan-http`](./artisan-http) | 0.12.0 | HTTP 客户端、洋葱模型、插件系统 | [README](./artisan-http/README.md) |
+| Crate | 职责 | 文档 |
+|-------|------|------|
+| [`artisan`](.) | Facade，Feature 控制的 re-export | [docs.rs/artisan](https://docs.rs/artisan) |
+| [`artisan-http`](./artisan-http) | HTTP 客户端、洋葱模型、插件系统 | [README](./artisan-http/README.md) |
 
 ## 安装
 
-```toml
+```bash
 # 推荐：通过 facade（默认包含 HTTP 功能）
+cargo add artisan
+
+# 直接依赖实现层
+cargo add artisan-http
+
+# 纯 facade（禁用 HTTP 功能）
+cargo add artisan --no-default-features
+```
+
+```toml
+# Cargo.toml
 [dependencies]
-artisan = "0.12"
+artisan = "~X.Y.Z"
 
 # 直接依赖实现层
 [dependencies]
-artisan-http = "0.1"
+artisan-http = "~X.Y.Z"
 
 # 纯 facade（禁用 HTTP 功能）
 [dependencies]
-artisan = { version = "0.12", default-features = false }
+artisan = { version = "~X.Y.Z", default-features = false }
 ```
 
 ## 快速入口

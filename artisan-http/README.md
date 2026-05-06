@@ -13,9 +13,13 @@
 
 ## 安装
 
+```bash
+cargo add artisan-http
+```
+
 ```toml
 [dependencies]
-artisan-http = "0.1"
+artisan-http = "~X.Y.Z"
 ```
 
 ## 快速开始

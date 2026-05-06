@@ -9,13 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 重构为 workspace 结构
+- 重构为 workspace 结构，引入 `artisan-http` crate
   ([9261167](https://github.com/yansongda/artisan/commit/9261167))
+- 更新 tokio 依赖至 ~1.52.0
+  ([ed5f65a](https://github.com/yansongda/artisan/commit/ed5f65a))
 
-### Added
+### Documentation
 
-- Feature 控制的 re-export，支持 `default-features = false` 禁用 HTTP 功能
-- 可选依赖 `artisan-http`（通过 "http" feature 控制）
+- 补充 v0.11.0 CHANGELOG
+  ([e1d1ace](https://github.com/yansongda/artisan/commit/e1d1ace))
 
 ## [0.11.0] - 2026-04-15
 
@@ -25,6 +27,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([c4c1b9f](https://github.com/yansongda/artful-rs/commit/c4c1b9f))
 - 代码优化 - 错误处理、架构、性能
   ([b5f3e5d](https://github.com/yansongda/artful-rs/commit/b5f3e5d))
+
+### Style
+
+- 修复所有 clippy pedantic 警告
+  ([4651893](https://github.com/yansongda/artful-rs/commit/4651893))
+
+### Documentation
+
+- 添加 CHANGELOG.md 记录版本变更
+  ([07f60e3](https://github.com/yansongda/artful-rs/commit/07f60e3))
+- CHANGELOG 补充 commit 链接
+  ([7dd4dd3](https://github.com/yansongda/artful-rs/commit/7dd4dd3))
 
 ## [0.10.0] - 2026-04-14
 
@@ -36,6 +50,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([42a37d9](https://github.com/yansongda/artful-rs/commit/42a37d9))
 - 改进 API 设计和错误处理
   ([9eb78e6](https://github.com/yansongda/artful-rs/commit/9eb78e6))
+
+### Fixed
+
+- 修复 `JsonDirection` 错误类型映射，为零大小插件添加 `Clone + Copy` trait
+  ([4e1ab9d](https://github.com/yansongda/artful-rs/commit/4e1ab9d))
+
+### Added
+
+- 添加完整测试覆盖 (59 tests)
+  ([325641e](https://github.com/yansongda/artful-rs/commit/325641e))
+- 添加 `AGENTS.md` 指导文件
+  ([28f7afb](https://github.com/yansongda/artful-rs/commit/28f7afb))
+
+### Documentation
+
+- 更新 `AGENTS.md` 强调提交前验证流程
+  ([7cb0db4](https://github.com/yansongda/artful-rs/commit/7cb0db4))
+
+### Style
+
+- `cargo fmt` 格式化代码
+  ([7cb0db4](https://github.com/yansongda/artful-rs/commit/7cb0db4))
 
 ## [0.9.0] - 2025-XX-XX
 
