@@ -33,18 +33,29 @@ artisan/                    # Root package (facade)
 
 ### Feature Control
 
-```toml
+```bash
 # Default: includes HTTP functionality
+cargo add artisan
+
+# Without HTTP: pure facade
+cargo add artisan --no-default-features
+
+# Direct dependency: explicit HTTP
+cargo add artisan-http
+```
+
+```toml
+# Cargo.toml
 [dependencies]
-artisan = "0.12"
+artisan = "~X.Y.Z"
 
 # Without HTTP: pure facade
 [dependencies]
-artisan = { version = "0.12", default-features = false }
+artisan = { version = "~X.Y.Z", default-features = false }
 
 # Direct dependency: explicit HTTP
 [dependencies]
-artisan-http = "0.1"
+artisan-http = "~X.Y.Z"
 ```
 
 ## Commands
