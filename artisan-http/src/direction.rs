@@ -20,23 +20,35 @@ use std::sync::Arc;
 /// 响应解析器 trait
 #[async_trait::async_trait]
 pub trait Direction: Send + Sync + std::fmt::Debug {
+    /// 解析 HTTP 响应
+    ///
+    /// # Errors
+    ///
+    /// 返回错误当响应解析失败。
     async fn parse(&self, rocket: &mut crate::Rocket) -> crate::Result<Destination>;
 }
 
 /// 解析策略枚举
 #[derive(Debug, Clone)]
 pub enum DirectionKind {
+    /// 解析为 JSON（默认）
     Json,
+    /// 返回原始 Response
     Response,
+    /// 不发起 HTTP 请求
     NoRequest,
+    /// 自定义解析器
     Custom(Arc<dyn Direction>),
 }
 
 /// 解析结果类型
 #[derive(Default)]
 pub enum Destination {
+    /// JSON 解析结果
     Json(serde_json::Value),
+    /// 原始 HTTP Response
     Response(reqwest::Response),
+    /// 无结果
     #[default]
     None,
 }

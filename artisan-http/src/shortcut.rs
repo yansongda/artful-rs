@@ -19,6 +19,6 @@ use crate::plugin::Plugin;
 /// let shortcuts: Vec<Box<dyn Shortcut>> = vec![...];
 /// ```
 pub trait Shortcut {
-    /// 返回插件列表
+    /// 根据参数返回插件列表
     fn get_plugins(&self, params: &HashMap<String, Value>) -> Vec<Arc<dyn Plugin>>;
 }

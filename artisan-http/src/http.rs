@@ -19,6 +19,10 @@ const DEFAULT_POOL_IDLE_TIMEOUT: u64 = 90;
 const DEFAULT_POOL_MAX_IDLE_PER_HOST: usize = 20;
 const DEFAULT_USER_AGENT: &str = concat!("yansongda/artisan-http:", env!("CARGO_PKG_VERSION"));
 
+/// 获取全局 HTTP 客户端单例
+///
+/// 首次调用时根据 [`Config::http`](crate::config::Config::http) 构建客户端，
+/// 后续调用返回同一实例，共享连接池。
 pub fn get_client() -> &'static reqwest::Client {
     static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
