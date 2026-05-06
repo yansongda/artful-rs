@@ -19,9 +19,9 @@ pub use artisan_http::Rocket;
 #[cfg(feature = "http")]
 pub use artisan_http::RocketConfig;
 #[cfg(feature = "http")]
-pub use artisan_http::{FlowCtrl, Next};
+pub use artisan_http::{ArtfulError, Result};
 #[cfg(feature = "http")]
-pub use artisan_http::{Result, ArtfulError};
+pub use artisan_http::{FlowCtrl, Next};
 
 // 配置和选项
 #[cfg(feature = "http")]
@@ -31,7 +31,7 @@ pub use artisan_http::HttpOptions;
 
 // 响应解析
 #[cfg(feature = "http")]
-pub use artisan_http::{Direction, DirectionKind, Destination};
+pub use artisan_http::{Destination, Direction, DirectionKind};
 
 // 序列化
 #[cfg(feature = "http")]
@@ -43,8 +43,11 @@ pub use artisan_http::Shortcut;
 
 // 内置插件
 #[cfg(feature = "http")]
-pub use artisan_http::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+pub use artisan_http::plugins::{AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin, StartPlugin};
 
 // 模块（供高级用户使用）
 #[cfg(feature = "http")]
-pub use artisan_http::{direction, directions, error, config, flow_ctrl, http, packer, packers, plugin, plugins, rocket, shortcut};
+pub use artisan_http::{
+    config, direction, directions, error, flow_ctrl, http, packer, packers, plugin, plugins,
+    rocket, shortcut,
+};

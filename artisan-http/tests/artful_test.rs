@@ -141,7 +141,11 @@ async fn test_plugin_error_propagation() {
 
     #[async_trait]
     impl Plugin for ErrorPlugin {
-        async fn assembly(&self, _rocket: &mut Rocket, _next: Next<'_>) -> artisan_http::Result<()> {
+        async fn assembly(
+            &self,
+            _rocket: &mut Rocket,
+            _next: Next<'_>,
+        ) -> artisan_http::Result<()> {
             Err(ArtfulError::PluginExecutionError {
                 plugin_name: "ErrorPlugin".to_string(),
                 message: self.message.clone(),
@@ -191,7 +195,11 @@ async fn test_plugin_chain_stops_on_error() {
 
     #[async_trait]
     impl Plugin for FailingPlugin {
-        async fn assembly(&self, _rocket: &mut Rocket, _next: Next<'_>) -> artisan_http::Result<()> {
+        async fn assembly(
+            &self,
+            _rocket: &mut Rocket,
+            _next: Next<'_>,
+        ) -> artisan_http::Result<()> {
             Err(ArtfulError::Other("plugin failed".to_string()))
         }
     }
