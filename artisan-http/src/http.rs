@@ -5,8 +5,8 @@
 //! # 设计说明
 //!
 //! - 使用 [`OnceLock`] 实现全局单例，共享连接池
-//! - 连接池参数从全局 [`Config::http`] 读取
-//! - Per-request timeout 通过 [`RocketConfig::http`] 设置
+//! - 连接池参数从全局 [`Config::http`](crate::config::Config::http) 读取
+//! - Per-request timeout 通过 [`RocketConfig::http`](crate::rocket::RocketConfig::http) 设置
 //! - 构建失败时使用 fallback 默认客户端
 
 use std::sync::OnceLock;

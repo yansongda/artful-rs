@@ -1,8 +1,10 @@
-//! Artisan - Api `RequesT` Framework U Like
+//! Artisan workspace facade，通过 feature 控制 re-export。
 //!
-//! 基于洋葱模型的 Rust HTTP 客端框架。
+//! # Features
 //!
-//! # 核心概念
+//! - `http`（默认启用）- re-export [`artisan_http`] 的核心类型和插件
+//!
+//! # 核心类型（需启用 `http` feature）
 //!
 //! - [`Rocket`] - 请求载体，携带整个请求生命周期的数据
 //! - [`Plugin`] - 插件 trait，洋葱模型的核心

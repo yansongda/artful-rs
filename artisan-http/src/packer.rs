@@ -4,7 +4,7 @@
 //!
 //! # 内置实现
 //!
-//! - [`JsonPacker`] - JSON 序列化器（默认）
+//! - [`JsonPacker`](crate::packers::JsonPacker) - JSON 序列化器（默认）
 
 use serde_json::Value;
 use std::collections::HashMap;
