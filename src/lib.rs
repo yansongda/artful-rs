@@ -13,5 +13,4 @@
 //! ```
 
 #[cfg(feature = "http")]
-#[cfg_attr(docsrs, doc(cfg(feature = "http")))]
 pub use artisan_http as http;
