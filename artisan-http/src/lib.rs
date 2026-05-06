@@ -4,7 +4,7 @@ pub mod direction;
 pub mod directions;
 pub mod error;
 pub use directions::JsonDirection;
-pub mod artisan;
+pub mod artful;
 pub mod config;
 pub mod flow_ctrl;
 pub mod http;
@@ -15,7 +15,7 @@ pub mod plugins;
 pub mod rocket;
 pub mod shortcut;
 
-pub use artisan::Artful;
+pub use artful::Artful;
 pub use config::Config;
 pub use direction::{Destination, Direction, DirectionKind};
 pub use error::{ArtfulError, Result};
