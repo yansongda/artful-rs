@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-05-06
+
+### Changed
+
+- 重构为 workspace 结构，引入 `artisan-http` crate
+  ([9261167](https://github.com/yansongda/artisan/commit/9261167))
+- 更新 tokio 依赖至 ~1.52.0
+  ([ed5f65a](https://github.com/yansongda/artisan/commit/ed5f65a))
+
+### Documentation
+
+- 补充 v0.11.0 CHANGELOG
+  ([e1d1ace](https://github.com/yansongda/artisan/commit/e1d1ace))
+
 ## [0.11.0] - 2026-04-15
 
 ### Changed
