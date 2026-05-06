@@ -156,7 +156,7 @@ pub struct Config {
 **使用示例**：
 
 ```rust
-use artisan::{Artful, Config, HttpOptions};
+use artisan::http::{Artful, Config, HttpOptions};
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -689,7 +689,7 @@ impl Plugin for ParserPlugin {
 ### 5.1 初始化框架
 
 ```rust
-use artisan::{Artful, Config};
+use artisan::http::{Artful, Config};
 
 // 初始化框架配置（可选）
 // config._force = true 时强制覆盖已存在的配置
@@ -699,8 +699,8 @@ Artful::config(Config::default());
 ### 5.2 基础使用
 
 ```rust
-use artisan::{Artful, Plugin, Rocket, flow_ctrl::Next};
-use artisan::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use artisan::http::{Artful, Plugin, Rocket, flow_ctrl::Next};
+use artisan::http::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::collections::HashMap;
@@ -751,8 +751,8 @@ async fn main() -> artisan::Result<()> {
 ### 5.3 使用 Shortcut 快捷方式
 
 ```rust
-use artisan::{Artful, Shortcut, Plugin};
-use artisan::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use artisan::http::{Artful, Shortcut, Plugin};
+use artisan::http::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
 use std::sync::Arc;
 use std::collections::HashMap;
 
@@ -791,7 +791,7 @@ let result = Artful::shortcut(shortcut, HashMap::new()).await?;
 ### 5.4 自定义插件
 
 ```rust
-use artisan::{Plugin, Rocket, flow_ctrl::Next};
+use artisan::http::{Plugin, Rocket, flow_ctrl::Next};
 use async_trait::async_trait;
 
 pub struct SignaturePlugin {
