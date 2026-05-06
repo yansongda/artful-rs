@@ -14,12 +14,11 @@
 artisan/                    # Root package (facade)
 ├── Cargo.toml              # Workspace config + facade package
 ├── src/lib.rs              # Facade with feature-controlled re-export
-├── artisan-http/           # HTTP implementation crate
-│   ├── Cargo.toml
-│   ├── src/                # All implementation code
-│   ├── tests/              # All tests (59 tests)
-│   └── examples/           # All examples
-└── examples/               # Root examples (for backward compatibility)
+└── artisan-http/           # HTTP implementation crate
+    ├── Cargo.toml
+    ├── src/                # All implementation code
+    ├── tests/              # All tests (59 tests)
+    └── examples/           # All examples
 ```
 
 ### Crate Roles

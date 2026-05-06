@@ -1,8 +1,8 @@
-# Artisan
+# artisan-http
 
-> Api RequesT Framework U Like - 你喜欢的 Rust API 请求框架
+> HTTP implementation for artisan framework
 
-基于洋葱模型的 Rust HTTP 客户端框架，灵感来自 [yansongda/artful](https://github.com/yansongda/artful)。
+基于洋葱模型的 Rust HTTP 客户端框架实现。
 
 ## 特性
 
@@ -10,36 +10,13 @@
 - 🔌 **插件化**: 每个请求都是一个插件组合，高度灵活可定制
 - 🛡️ **类型安全**: Rust 类型系统确保配置和参数的类型安全
 - ⚡ **高性能**: 全局 HTTP Client 单例，共享连接池
-- 📦 **模块化**: Workspace 架构，HTTP 功能可选
 
 ## 安装
-
-### 使用默认功能（推荐）
-
-```toml
-[dependencies]
-artisan = "0.12"
-```
-
-默认包含 HTTP 功能，可直接使用所有特性。
-
-### 禁用 HTTP 功能
-
-```toml
-[dependencies]
-artisan = { version = "0.12", default-features = false }
-```
-
-仅使用核心抽象，不包含 HTTP 实现。
-
-### 直接依赖 HTTP 实现
 
 ```toml
 [dependencies]
 artisan-http = "0.1"
 ```
-
-直接使用 HTTP 实现 crate。
 
 ## 快速开始
 
@@ -95,6 +72,44 @@ async fn main() -> artisan_http::Result<()> {
 }
 ```
 
+### 使用 Shortcut 快捷方式
+
+```rust
+use artisan_http::{Artful, Shortcut, Plugin};
+use artisan_http::plugins::{StartPlugin, AddPayloadBodyPlugin, AddRadarPlugin, ParserPlugin};
+use std::sync::Arc;
+use std::collections::HashMap;
+
+#[derive(Default)]
+struct MyApiShortcut {
+    method: reqwest::Method,
+    url: String,
+}
+
+impl Shortcut for MyApiShortcut {
+    fn get_plugins(&self, _params: &HashMap<String, serde_json::Value>) 
+        -> Vec<Arc<dyn Plugin>> 
+    {
+        vec![
+            Arc::new(StartPlugin),
+            Arc::new(MethodUrlPlugin {
+                method: self.method.clone(),
+                url: self.url.clone(),
+            }),
+            Arc::new(AddPayloadBodyPlugin),
+            Arc::new(AddRadarPlugin),
+            Arc::new(ParserPlugin),
+        ]
+    }
+}
+
+let shortcut = MyApiShortcut {
+    method: reqwest::Method::POST,
+    url: "https://api.example.com/orders".to_string(),
+};
+let result = Artful::shortcut(shortcut, HashMap::new()).await?;
+```
+
 ### 自定义插件
 
 ```rust
@@ -142,6 +157,19 @@ pub struct Rocket {
 - `payload`: 业务参数，由 `StartPlugin` 从 `params` 初始化，后续插件可修改
 - `config`: HTTP 配置，包含 `direction`（响应解析策略），由插件负责设置
 
+### RocketConfig - 请求配置
+
+```rust
+pub struct RocketConfig {
+    pub method: reqwest::Method,
+    pub url: String,
+    pub headers: HashMap<String, String>,
+    pub body: Option<String>,
+    pub http: HttpOptions,
+    pub direction: DirectionKind,     // 响应解析策略
+}
+```
+
 ### Plugin - 插件（洋葱模型）
 
 插件是洋葱模型的核心，每个插件可以在请求前向和后向阶段执行操作：
@@ -179,18 +207,6 @@ pub enum DirectionKind {
 | `AddRadarPlugin` | 构建 HTTP Request |
 | `ParserPlugin` | 执行请求并解析响应 |
 
-## Workspace 结构
-
-```
-artisan/                    # 根目录（facade crate）
-├── Cargo.toml              # Workspace 配置
-├── src/lib.rs              # Feature 控制的 re-export
-└── artisan-http/           # HTTP 实现 crate
-    ├── src/                # 所有实现代码
-    ├── tests/              # 所有测试（59 个）
-    └── examples/           # 所有示例
-```
-
 ## 示例
 
 ```bash
@@ -202,10 +218,17 @@ cargo run -p artisan-http --example custom_plugin
 cargo run -p artisan-http --example direction
 ```
 
+## 测试
+
+```bash
+# 运行所有测试（59 个）
+cargo test -p artisan-http --all-features
+```
+
 ## 文档
 
-- 详细架构设计：[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- HTTP 实现详情：[artisan-http/README.md](artisan-http/README.md)
+- 详细架构设计：[docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)
+- 项目说明：[AGENTS.md](AGENTS.md)
 
 ## 许可证
 
